@@ -1,0 +1,4881 @@
+{
+  "_metadata": {
+    "schema_name": "SCHEMA_V26_ALGO_95.2_CANON",
+    "schema_version": "26.00",
+    "last_updated": "2026-01-21",
+    "algo_version": "95.2",
+    "previous_version": "25.00",
+    "database_version": "V26.00",
+    "architecture": "STAR_SCHEMA",
+    "master_databases": {
+      "BFD": "BIG-BFD Film and TV Show Views Based Metadata",
+      "star_schema": "BFD_Star_Schema_V24.00.parquet",
+      "abstract_data": "FC-BFD-Abstract-v12.00.parquet",
+      "training_data": "Views Training Data (52+ sources)"
+    },
+    "topology_reference": "ViewerDBX Platform Engine & Topology v10.00.pdf",
+    "based_on": [
+      "FC-ALGO-95.2.md",
+      "ALGO_95.2_COMPLETE_MANUAL.md",
+      "ALGO 65.2 BUILDING THE TRUE TABLE.pdf",
+      "country_viewership_weights_2025.json",
+      "ViewerDBX Platform Engine & Topology v10.00.pdf",
+      "streaming_lookup_*.json (22 country files)",
+      "platform_exclusivity_patterns.json",
+      "international_content_exclusivity.json",
+      "SOCIAL_SIGNAL_INTEGRATION_STRATEGY.md",
+      "social_platform_weights.json"
+    ],
+    "changes_from_v21_00_to_v22_00": [
+      "BUG FIX: views_*_global column naming clarified - 'global' was misleading",
+      "RENAME: views_*_global -> views_*_total (total views before country allocation)",
+      "FIX: Removed 'global' from countries_18 array (was 19 items, now truly 18)",
+      "NEW SECTION: _views_total_vs_country_architecture - documents allocation flow",
+      "CLARIFICATION: 'total' = allocation source (100%), 'row' = Rest of World (2%)",
+      "COLUMN NAMING: Added _temporal_column_naming_standards with clear rules",
+      "BACKWARD COMPAT: Added column_aliases for legacy views_*_global references",
+      "VALIDATION: Added rule_15 for total vs country sum conservation"
+    ],
+    "changes_from_v20_00_to_v21_00": [
+      "FLIXPATROL INGESTION RULES: Added _flixpatrol_ingestion_rules section",
+      "FLIXPATROL COLUMNS: Defined ONLY 3 FlixPatrol-specific columns (flixpatrol_id, flixpatrol_points, flixpatrol_rank)",
+      "FIELD MAPPING: All other FlixPatrol API fields map to existing BFD columns (MERGE, not CREATE)",
+      "INGESTION ACTIONS: Defined MERGE, APPEND, SKIP rules for each FlixPatrol field",
+      "DATA PRIORITY: Established source priority hierarchy (TMDB > IMDb > FlixPatrol for metadata)",
+      "SCHEMA ENFORCEMENT: Schema MUST be used for all FlixPatrol data ingestion"
+    ],
+    "changes_from_v80_17": [
+      "DATABASE VERSION V18.00: Major synchronized database build",
+      "MAPIE V18.00: Both BFD and Star Schema now at V18.00",
+      "BFD: 768,641 rows x 1,708 columns (2.83 GB)",
+      "STAR SCHEMA: 204,205,513 rows x 4 columns (576 MB)",
+      "EXCLUSIVE TITLES: 4,798 detected (prime: 3,800, disney: 858, netflix: 140)",
+      "UNRELEASED BLOCKED: 7,848 titles (1.02%)",
+      "FINAL SEASONS: 69,920 marked",
+      "SERIES ENDED: 87,649 detected via end_year"
+    ],
+    "changes_from_v80_12": [
+      "DATE FIELD MAPPINGS: Added _date_field_mappings section for release date field translations (IMDb startYear, TMDB air_date, FlixPatrol Release, Hulu Original Premiere Date, Apple Release)",
+      "END DATE MAPPINGS: Added _end_date_field_mappings section for series conclusion (IMDb endYear, TMDB last_air_date/status/in_production)",
+      "MAX SEASONS AUDIT: Added _max_seasons_field_mappings - MISSION CRITICAL audit for season row production (TMDB number_of_seasons, IMDb derived, FlixPatrol seasons)",
+      "RELEASE VALIDATION: start_year is CANONICAL for release validation, premiere_date REMOVED (inherits from series)",
+      "STREAMING AVAILABILITY TERMS: Added Hulu 'Expiring', Apple 'Leaving Soon', Netflix 'Last Day to Watch', Prime 'Leaving Prime'",
+      "PLATFORM EXCLUSIVITY: Added amazon_prime_originals and netflix_originals rules to exclusivity patterns",
+      "INGESTION VALIDATION: Added rules for cross-source reconciliation and data quality checks"
+    ],
+    "changes_from_v80_11": [
+      "SOCIAL SIGNALS: Added multi-platform social signal integration (6 platforms)",
+      "NEW X-FEATURES: 8 new social X-features (abs_social_buzz_v2, abs_tiktok_engagement, etc.)",
+      "TALENT METRICS: Added cast/talent social footprint tracking",
+      "SENTIMENT ANALYSIS: Added sentiment scoring from social mentions",
+      "MAPE IMPROVEMENT: Target improved from ~9% to ~6.3% (30% better)"
+    ],
+    "changes_from_v80_10": [
+      "PLATFORM EXCLUSIVITY: Added studio-based exclusivity patterns (BritBox for BBC/ITV content)",
+      "INTERNATIONAL EXCLUSIVITY: Added reverse exclusivity for K-drama, Nordic, European, Turkish content",
+      "API VERIFICATION: Platform availability verified via Streaming Availability API (60+ countries)",
+      "NEW COMPONENT FILES: platform_exclusivity_patterns.json, international_content_exclusivity.json, streaming_api_platform_availability.json, platform_canonical_mapping.json"
+    ],
+    "changes_from_v80_00": [
+      "STAR SCHEMA: Split into Cranberry_Titles (fact) + Cranberry_Platform_Views (dimension)",
+      "AVAILABILITY-AWARE: Platform views only allocated where title IS ACTUALLY AVAILABLE",
+      "SPARSE STORAGE: Platform views stored as rows (not columns) - ~50M rows vs 4,320 columns",
+      "LOOKUP INTEGRATION: streaming_lookup_*.json files gate platform allocation",
+      "VERSION CONVENTION: All outputs renamed to Cranberry_[descriptor] pattern"
+    ],
+    "changes_from_v70": [
+      "Added 18-country allocation model (was 3 regions)",
+      "Added 20 X-Feature columns (optional/nullable)",
+      "Added 12 Y-Ground Truth columns",
+      "Added 16 Audit/Metadata columns",
+      "Added WVV calculation columns",
+      "Added 56 signals SET 1-9 framework",
+      "Added genre conversion table (hours_per_view)",
+      "Added platform elasticity coefficients",
+      "Updated UK normalization with GB/GBR mapping"
+    ],
+    "notes": [
+      "GB is canonical ISO 3166-1 alpha-2 code for United Kingdom - UK alias deprecated",
+      "au MEANS Australia, not Austria",
+      "X-Features are OPTIONAL (nullable) - can be null if abstract data unavailable",
+      "WVV = Views x Completion x beta_p x lambda_g^-1",
+      "FLIXPATROL: Only 3 dedicated columns - all other data merges to BFD columns",
+      "V22.00: 'total' suffix = worldwide sum, 'row' suffix = Rest of World allocation (2%)"
+    ],
+    "changes_from_v80_18": [
+      "STUDIO VS PRODUCTION COMPANY: Clear distinction between physical studios and production companies",
+      "NEW COLUMNS: studio_facility, studio_facility_type, production_company_primary, production_company_type_corrected",
+      "NEW ENGINE: studio_vs_production_company.py for classification",
+      "DEFINITION FIX: 'studio' now correctly refers to physical facilities only",
+      "DEFINITION FIX: 'production_company' now correctly refers to content creators only",
+      "DATABASE CORRECTION: Automated classification of misplaced entities"
+    ],
+    "changes_from_v80_19": [
+      "DATABASE VERSION SYNC: Schema now aligned with BFD V19.82",
+      "BUG FIX P0: Zero-variance temporal columns rebuilt with GPU-vectorized engine (temporal_views_engine.py V2.0)",
+      "BUG FIX P3: Phantom seasons detection expanded from 2 to 403 rows (fix_phantom_seasons.py)",
+      "BUG FIX P4: IMDB mismatches corrected for The Traitors franchise (fix_imdb_mismatches.py)",
+      "STAR SCHEMA: Rebuilt from corrected BFD (update_star_schema_v19_80.py)",
+      "ML ENSEMBLE: 3-model GPU ensemble (XGBoost, CatBoost, cuML RF) with 1350 trees each",
+      "LIGHTGBM: DEPRECATED - GPU builds unavailable",
+      "TRAINING DATA VALIDATED: IMDB Seasons Allocated.csv (224,394 rows) - 100% fc_uid overlap, 100% season_number match",
+      "COLUMN TRANSLATIONS: imdb_rating->imdb_score, imdb_votes->imdb_vote_count, cast->cast_data documented"
+    ],
+    "changes_from_v80_20_to_v20_00": [
+      "ISO 3166-1 COMPLIANCE: Standardized all country codes to ISO 3166-1 alpha-2 format",
+      "GB FIX: 'gb' country code deprecated in favor of 'GB' (ISO standard)",
+      "STREAMING LOOKUP: streaming_lookup_gb.json renamed to streaming_lookup_gb.json",
+      "COUNTRY FIELD: All country_code fields now use uppercase ISO codes",
+      "COMPONENTS UPDATED: platform_allocation_weights.json, streaming_lookup files standardized",
+      "ALGO VERSION: Updated to FC-ALGO-90.5 with full 13-directory engine integration",
+      "DATABASE VERSION: V19.83 confirmed",
+      "BACKWARD COMPATIBILITY: 'gb' accepted on ingestion, normalized to 'GB' internally"
+    ],
+    "changes_from_v22_00_to_v23_00": [
+      "TV SEASON END DATE RETRIEVAL: Added _season_end_date_retrieval_rules section",
+      "TMDB SEASON ENDPOINT: Documented /tv/{tv_id}/season/{season_number} for season-level air_date of last episode",
+      "TMDB APPEND_TO_RESPONSE: Added last_episode_to_air retrieval via /tv/{tv_id} endpoint",
+      "IMDB DATASETS: Added title.episode.tsv file mapping for episode-level air dates",
+      "OMDB API: Added Year field parsing for series date ranges (e.g., 2010-2015)",
+      "TVMAZE FALLBACK: Added TVMaze API as alternative source for accurate episode-level data",
+      "RETRIEVAL WORKFLOW: Documented 3-step workflow for season end date retrieval",
+      "ACCURACY NOTES: Added guidance for currently-airing seasons and missing data handling",
+      "SOURCE PRIORITY: Established TMDB > TVMaze > IMDb > OMDb for season end dates"
+    ],
+    "changes_v23_20": [
+      "COUNTRY EXPANSION: Added 4 new countries (hk=Hong Kong, ie=Ireland, ru=Russia, tr=Turkey)",
+      "COUNTRIES ARRAY: Updated from countries_18 to countries_22 (18 + 4 new = 22 allocations)",
+      "NEW COLUMNS: 80 new views columns for hk/ie/ru/tr (quarterly + half-yearly 2021-2026)",
+      "RATIO FEATURES: Added 10 country allocation ratio columns (ratio_{country}_to_global)",
+      "DEPRECATED COLUMNS REMOVED: 17 columns removed from BFD (interaction features, multipliers, computed_views)",
+      "DATABASE VERSION: BFD_V23.20.parquet (765,860 rows x 1,696 columns after cleanup)"
+    ],
+    "changes_from_v23_00_to_v24_00": [
+      "ALGO VERSION: Updated from ALGO-80/90.5 to ALGO-95.2 (production algorithm)",
+      "TOPOLOGY REFERENCE: Updated to ViewerDBX Platform Engine & Topology v10.00.pdf",
+      "MASTER DATABASES: Added explicit master_databases section (BFD, Star Schema, Abstract Data, Training Data)",
+      "BASED_ON: Updated all references from ALGO-80 to ALGO-95.2",
+      "COUNTRY FILES: Updated to 22 country streaming lookup files",
+      "CANON COLUMN STRUCTURE: Documented 1711 column taxonomy per topology v10.00",
+      "COLUMN GROUPS: Identity & IDs (1-6), Core Metadata (7-70), Views by Half-Year & Country (72-245), Views by Quarter & Country (246-651), ML Lag Features (652-859), ML Bucket Features (860-1032), Interaction Features (1033-1080), Computed Weights (1081-1082), Extended Views US/CN (1083-1122), Historical Views 2021-2022 (1123-1350), Future Views 2026 (1351-1426), Abstract Signals (1427-1452), Country-Specific Predictions (1455-1660), Platform & Aggregates (1661-1700), Studio Classification (1701-1711)",
+      "VALIDATION RULES: Updated rule_6 schema_version to 24.00",
+      "HARDWIRED PATHS: Updated all ALGO 80 references to ALGO 95.2",
+      "CONFORMITY CHECK: Validated against ViewerDBX Platform Engine & Topology v10.00.pdf"
+    ],
+    "changes_from_v24_00_to_v25_00": [
+      "NEW COLUMN: streaming_release_date - Exact date content becomes available on streaming platform",
+      "NEW COLUMN: is_catalog_addition - Boolean flag (True when premiere_date year < start_year)",
+      "DATA MODEL CLARIFICATION: premiere_date = original theatrical/broadcast date (immutable)",
+      "DATA MODEL CLARIFICATION: start_year = streaming availability year",
+      "DATA MODEL CLARIFICATION: streaming_release_date = exact streaming availability date",
+      "CATALOG ADDITIONS: 40,747 records flagged where old content added to streaming later",
+      "DATABASE FILES: BFD_V25.00.parquet, BFD_V23.81.parquet updated"
+    ],
+    "changes_from_v25_00_to_v26_00": [
+      "NEW COLUMN: nielsen_minutes_millions - Nielsen-reported minutes viewed in millions",
+      "NEW COLUMN: avg_view_duration_min - Average viewing duration assumption per view (valuable for views calculation)",
+      "NEW COLUMN: streaming_platform_primary - Primary streaming platform for title (source platform)",
+      "NEW COLUMN: period_start - Start date of measurement period (YYYY-MM-DD format)",
+      "NEW COLUMN: period_end - End date of measurement period (YYYY-MM-DD format)",
+      "NEW COLUMNS: views_weekly_* - 20 weekly views columns for Nielsen weekly data (18 countries + total + row)",
+      "COLUMN GROUP: Added Nielsen Weekly Views (1712-1733) for weekly temporal granularity",
+      "DATA SOURCE: Added Nielsen Weekly Streaming Top 10 as primary weekly views source",
+      "FORMULA SUPPORT: conversion_formula column documents how views are calculated from minutes",
+      "DATABASE FILES: BFD_V26.00.parquet updated with new columns"
+    ]
+  },
+  "_views_total_vs_country_architecture": {
+    "description": "CRITICAL: Clarification of 'total' vs 'country' view columns (V22.00 bug fix)",
+    "added": "2026-01-17",
+    "reason": "V21.00 had misleading naming: 'global' in countries_18 array caused confusion",
+    "bug_fixed": "countries_18 array had 19 items (included 'global'), now truly has 18 countries",
+    "architecture": {
+      "step_1_ml_prediction": {
+        "description": "ML ensemble generates a single predicted view count per title per period",
+        "output_column_pattern": "views_{period}_{year}_total",
+        "example": "views_q1_2024_total = 11,144,181",
+        "note": "This is the TOTAL worldwide views before any geographic allocation"
+      },
+      "step_2_country_allocation": {
+        "description": "Total views are split proportionally into 18 country allocations",
+        "formula": "views_{period}_{year}_{country} = views_{period}_{year}_total \u00d7 (country_weight / 100)",
+        "output_column_pattern": "views_{period}_{year}_{country_code}",
+        "example_allocations": {
+          "views_q1_2024_us": "11,144,181 \u00d7 0.37 = 4,123,347",
+          "views_q1_2024_gb": "11,144,181 \u00d7 0.065 = 723,872",
+          "views_q1_2024_row": "11,144,181 \u00d7 0.02 = 222,884"
+        }
+      }
+    },
+    "critical_distinction": {
+      "total_suffix": {
+        "meaning": "Worldwide total views (100% allocation pool)",
+        "column_pattern": "views_{period}_{year}_total",
+        "is_a_country": false,
+        "weight_percent": 100.0
+      },
+      "row_suffix": {
+        "meaning": "Rest of World - countries not individually tracked",
+        "column_pattern": "views_{period}_{year}_row",
+        "is_a_country": true,
+        "weight_percent": 2.0,
+        "note": "ROW is ONE of the 18 country allocations, NOT a synonym for 'total'"
+      }
+    },
+    "conservation_law": {
+      "rule": "SUM(all 18 country columns) = total column",
+      "validation_query": "SELECT fc_uid FROM bfd WHERE views_q1_2024_total != (views_q1_2024_us + views_q1_2024_cn + ... + views_q1_2024_row)",
+      "tolerance": "0.01% for floating point rounding"
+    },
+    "column_rename_v22": {
+      "old_pattern": "views_{period}_{year}_global",
+      "new_pattern": "views_{period}_{year}_total",
+      "reason": "'global' was ambiguous - could mean 'worldwide total' or 'globally available platforms'",
+      "migration": "Rename all *_global columns to *_total in Phase 6 output"
+    }
+  },
+  "_temporal_column_naming_standards": {
+    "description": "Canonical naming standards for temporal view columns (V22.00)",
+    "added": "2026-01-17",
+    "total_columns": {
+      "description": "Worldwide total views BEFORE country allocation",
+      "pattern": "views_{period}_{year}_total",
+      "examples": [
+        "views_q1_2024_total",
+        "views_h1_2024_total",
+        "views_q4_2025_total"
+      ],
+      "dtype": "int64",
+      "source": "Phase 5 ML prediction output"
+    },
+    "country_columns": {
+      "description": "Views allocated to specific countries",
+      "pattern": "views_{period}_{year}_{country_code}",
+      "examples": [
+        "views_q1_2024_us",
+        "views_q1_2024_gb",
+        "views_q1_2024_row"
+      ],
+      "dtype": "int64",
+      "source": "Phase 6 country allocation output",
+      "valid_country_codes": [
+        "us",
+        "cn",
+        "in",
+        "gb",
+        "br",
+        "de",
+        "jp",
+        "fr",
+        "ca",
+        "mx",
+        "au",
+        "es",
+        "it",
+        "kr",
+        "nl",
+        "se",
+        "sg",
+        "hk",
+        "ie",
+        "ru",
+        "tr",
+        "row"
+      ]
+    },
+    "wvv_columns": {
+      "description": "Weighted View Value columns (same pattern)",
+      "total_pattern": "wvv_{period}_{year}_total",
+      "country_pattern": "wvv_{period}_{year}_{country_code}"
+    },
+    "deprecated_patterns": {
+      "views_*_global": {
+        "status": "DEPRECATED as of V22.00",
+        "replacement": "views_*_total",
+        "reason": "'global' was ambiguous and appeared in countries_18 array incorrectly"
+      }
+    }
+  },
+  "_column_aliases_backward_compat": {
+    "description": "Backward compatibility aliases for renamed columns (V22.00)",
+    "added": "2026-01-17",
+    "aliases": {
+      "views_q1_2024_total": "views_q1_2024_total",
+      "views_q2_2024_total": "views_q2_2024_total",
+      "views_q3_2024_total": "views_q3_2024_total",
+      "views_q4_2024_total": "views_q4_2024_total",
+      "views_h1_2024_total": "views_h1_2024_total",
+      "views_h2_2024_total": "views_h2_2024_total",
+      "views_q1_2025_total": "views_q1_2025_total",
+      "views_q2_2025_total": "views_q2_2025_total",
+      "views_q3_2025_total": "views_q3_2025_total",
+      "views_q4_2025_total": "views_q4_2025_total",
+      "views_h1_2025_total": "views_h1_2025_total",
+      "views_h2_2025_total": "views_h2_2025_total",
+      "views_q1_2026_total": "views_q1_2026_total",
+      "views_q2_2026_total": "views_q2_2026_total",
+      "views_q3_2026_total": "views_q3_2026_total",
+      "views_q4_2026_total": "views_q4_2026_total",
+      "views_h1_2026_total": "views_h1_2026_total",
+      "views_h2_2026_total": "views_h2_2026_total"
+    },
+    "implementation_note": "Code should check for alias if canonical column not found"
+  },
+  "_flixpatrol_ingestion_rules": {
+    "description": "CANONICAL FlixPatrol data ingestion rules - Schema MUST be used for all FlixPatrol API data processing",
+    "added": "2026-01-16",
+    "version": "21.00",
+    "criticality": "HIGH - Ensures data consistency and prevents column proliferation",
+    "flixpatrol_specific_columns": {
+      "description": "ONLY these 3 columns are FlixPatrol-specific. NO OTHER FlixPatrol columns should be created.",
+      "count": 3,
+      "columns": {
+        "flixpatrol_id": {
+          "dtype": "str",
+          "description": "Unique FlixPatrol identifier for title",
+          "source_field": "id",
+          "nullable": true,
+          "example": "123456"
+        },
+        "flixpatrol_points": {
+          "dtype": "float64",
+          "description": "FlixPatrol's 'points' score for rankings (proprietary metric)",
+          "source_field": "points",
+          "nullable": true,
+          "range": {
+            "min": 0,
+            "max": null
+          },
+          "notes": "Daily/weekly point accumulation from FlixPatrol rankings"
+        },
+        "flixpatrol_rank": {
+          "dtype": "int32",
+          "description": "Title's ranking position on FlixPatrol lists",
+          "source_field": "rank",
+          "nullable": true,
+          "range": {
+            "min": 1,
+            "max": null
+          },
+          "notes": "Lower is better (1 = top ranked)"
+        }
+      }
+    },
+    "field_mapping_to_bfd": {
+      "description": "FlixPatrol API fields that MERGE INTO existing BFD columns - DO NOT create new columns",
+      "ingestion_actions": {
+        "MERGE": "Update BFD column if BFD value is NULL/empty, otherwise keep existing",
+        "APPEND": "Add to existing value (e.g., source_apis_used list)",
+        "SKIP": "Do not ingest - data not needed or unreliable from this source",
+        "OVERWRITE": "Always use FlixPatrol value (rare - only for FlixPatrol-specific data)"
+      },
+      "mappings": [
+        {
+          "flixpatrol_field": "id",
+          "bfd_column": "flixpatrol_id",
+          "dtype": "str",
+          "action": "OVERWRITE",
+          "notes": "FlixPatrol's unique identifier - always use"
+        },
+        {
+          "flixpatrol_field": "imdbId",
+          "bfd_column": "imdb_id",
+          "dtype": "str",
+          "action": "MERGE",
+          "transform": "Prefix with 'tt' if numeric (e.g., 903747 -> tt0903747)",
+          "priority": 3,
+          "notes": "IMDb ID - only use if BFD imdb_id is NULL"
+        },
+        {
+          "flixpatrol_field": "tmdbId",
+          "bfd_column": "tmdb_id",
+          "dtype": "int64",
+          "action": "MERGE",
+          "priority": 3,
+          "notes": "TMDB ID - only use if BFD tmdb_id is NULL"
+        },
+        {
+          "flixpatrol_field": "title",
+          "bfd_column": "title",
+          "dtype": "str",
+          "action": "MERGE",
+          "priority": 3,
+          "notes": "Title name - only use if BFD title is NULL"
+        },
+        {
+          "flixpatrol_field": "premiere",
+          "bfd_column": "premiere_date",
+          "dtype": "str",
+          "action": "MERGE",
+          "transform": "Parse to YYYY-MM-DD format",
+          "priority": 3,
+          "notes": "Release date - streaming availability date, may differ from original air date"
+        },
+        {
+          "flixpatrol_field": "description",
+          "bfd_column": "overview",
+          "dtype": "str",
+          "action": "MERGE",
+          "priority": 3,
+          "notes": "Plot synopsis - only use if BFD overview is NULL"
+        },
+        {
+          "flixpatrol_field": "length",
+          "bfd_column": "runtime_minutes",
+          "dtype": "int32",
+          "action": "MERGE",
+          "priority": 3,
+          "notes": "Episode/movie runtime in minutes"
+        },
+        {
+          "flixpatrol_field": "budget",
+          "bfd_column": "budget",
+          "dtype": "float64",
+          "action": "MERGE",
+          "priority": 3,
+          "notes": "Production budget - only use if BFD budget is NULL"
+        },
+        {
+          "flixpatrol_field": "boxOffice",
+          "bfd_column": "revenue",
+          "dtype": "float64",
+          "action": "MERGE",
+          "priority": 3,
+          "notes": "Box office revenue (movies) - maps to BFD revenue column"
+        },
+        {
+          "flixpatrol_field": "countries",
+          "bfd_column": "production_country",
+          "dtype": "str",
+          "action": "MERGE",
+          "priority": 3,
+          "notes": "Production country codes"
+        },
+        {
+          "flixpatrol_field": "seasons",
+          "bfd_column": "max_seasons",
+          "dtype": "int32",
+          "action": "MERGE",
+          "priority": 3,
+          "notes": "Total number of seasons (TV series) - CRITICAL for row production"
+        },
+        {
+          "flixpatrol_field": "points",
+          "bfd_column": "flixpatrol_points",
+          "dtype": "float64",
+          "action": "OVERWRITE",
+          "notes": "FlixPatrol-specific metric - always use latest"
+        },
+        {
+          "flixpatrol_field": "rank",
+          "bfd_column": "flixpatrol_rank",
+          "dtype": "int32",
+          "action": "OVERWRITE",
+          "notes": "FlixPatrol-specific metric - always use latest"
+        },
+        {
+          "flixpatrol_field": "Release",
+          "bfd_column": "premiere_date",
+          "dtype": "str",
+          "action": "MERGE",
+          "priority": 3,
+          "notes": "Alternate field name for premiere date"
+        },
+        {
+          "flixpatrol_field": "Number of Seasons",
+          "bfd_column": "max_seasons",
+          "dtype": "int32",
+          "action": "MERGE",
+          "priority": 3,
+          "notes": "Alternate field name for seasons count"
+        }
+      ]
+    },
+    "fields_to_skip": {
+      "description": "FlixPatrol fields that should NOT be ingested",
+      "fields": [
+        {
+          "field": "internalId",
+          "reason": "FlixPatrol internal use only"
+        },
+        {
+          "field": "lastUpdated",
+          "reason": "Use BFD ingestion_timestamp instead"
+        },
+        {
+          "field": "crawlDate",
+          "reason": "Collection metadata, not title data"
+        }
+      ]
+    },
+    "source_priority": {
+      "description": "When same field available from multiple sources, use this priority (1=highest)",
+      "priority_order": {
+        "1": "TMDB API (most complete, most reliable)",
+        "2": "IMDb datasets (authoritative for IDs, ratings)",
+        "3": "FlixPatrol API (streaming-specific data)"
+      },
+      "override_exceptions": [
+        "flixpatrol_id - Always from FlixPatrol",
+        "flixpatrol_points - Always from FlixPatrol",
+        "flixpatrol_rank - Always from FlixPatrol"
+      ]
+    },
+    "x_feature_derivation": {
+      "description": "X-Features derived FROM FlixPatrol data (computed, not stored directly)",
+      "features": [
+        {
+          "x_feature": "abs_trend_velocity",
+          "source_data": "flixpatrol_points (week-over-week change)",
+          "formula": "(points_week_n - points_week_n_minus_1) / max(points_week_n_minus_1, 1)",
+          "dtype": "float32",
+          "range": "-1 to +5",
+          "notes": "Computed during Phase 3 X-Feature Creation"
+        },
+        {
+          "x_feature": "abs_ranking_buzz",
+          "source_data": "flixpatrol_points (normalized)",
+          "formula": "min(100, flixpatrol_points / 1000)",
+          "dtype": "float32",
+          "range": "0-100",
+          "notes": "Normalized FlixPatrol points as abstract signal"
+        }
+      ],
+      "note": "These are COMPUTED features, not direct FlixPatrol columns"
+    },
+    "ingestion_workflow": {
+      "step_1": "Load FlixPatrol data from API or file",
+      "step_2": "For each record, lookup existing BFD row by imdb_id or tmdb_id",
+      "step_3": "If match found: Apply field mappings per action (MERGE/APPEND/SKIP)",
+      "step_4": "If no match: Create new row with FlixPatrol data as seed, mark for enrichment",
+      "step_5": "Update source_apis_used to include 'flixpatrol'",
+      "step_6": "Log ingestion metrics to audit_log"
+    },
+    "validation_rules": [
+      "RULE 1: NEVER create columns prefixed with 'fp_' or 'flixpatrol_' except the 3 defined",
+      "RULE 2: Always attempt to match existing BFD rows before creating new",
+      "RULE 3: FlixPatrol data is TERTIARY priority (after TMDB, IMDb)",
+      "RULE 4: flixpatrol_points and flixpatrol_rank should be updated daily",
+      "RULE 5: Log all merge/skip decisions for audit trail"
+    ],
+    "collection_config": {
+      "api_endpoint": "https://api.flixpatrol.com/v2",
+      "auth_method": "HTTP Basic Auth",
+      "api_key": "aku_4bXKmMWPSCaKxwn2tVzTXmcg",
+      "collection_schedule": "Daily at 02:00 AM EST via SCHIG",
+      "data_types_collected": [
+        "titles",
+        "rankings",
+        "points",
+        "top10"
+      ],
+      "output_format": "flixpatrol_YYYYMMDD_HHMMSS.json"
+    }
+  },
+  "_date_field_mappings": {
+    "description": "Canonical mapping of release date fields across data sources",
+    "added": "2026-01-14",
+    "reason": "Different APIs/databases use different field names for release dates. This mapping ensures consistent interpretation.",
+    "canonical_field": "start_year",
+    "canonical_purpose": "The canonical release year for a TV season. Used as the primary indicator for released vs unreleased content.",
+    "source_mappings": {
+      "imdb": {
+        "field": "startYear",
+        "level": "series",
+        "notes": "Stored at series level, derived from first episode release. For seasons, may reflect S1 premiere.",
+        "example": "tt9288030 (Reacher) startYear=2022"
+      },
+      "tmdb": {
+        "field": "air_date",
+        "level": "season/episode",
+        "notes": "Available at season and episode level. More granular than IMDb.",
+        "example": "Reacher S1 air_date=2022-02-04"
+      },
+      "flixpatrol": {
+        "field": "Release",
+        "level": "title",
+        "notes": "When title became available on a streaming service. May differ from original air date.",
+        "example": "Reacher Release=2022-02-04 (Prime Video)",
+        "bfd_mapping": "premiere_date",
+        "action": "MERGE"
+      },
+      "hulu": {
+        "field": "Original Premiere Date",
+        "level": "season",
+        "notes": "Internal field for when content premiered. May include windowed releases.",
+        "example": "Original Premiere Date for licensed content"
+      },
+      "apple_tv_plus": {
+        "field": "Release",
+        "level": "season",
+        "notes": "Release date for Apple originals.",
+        "example": "Ted Lasso S3 Release=2023-03-15"
+      },
+      "netflix": {
+        "field": "Release Date",
+        "level": "title",
+        "notes": "Netflix uses Release Date for both originals and licensed content.",
+        "example": "Wednesday Release Date=2022-11-23"
+      },
+      "amazon_prime": {
+        "field": "Release Date",
+        "level": "season",
+        "notes": "Amazon Prime Video release date.",
+        "example": "Reacher S1 Release Date=2022-02-04"
+      }
+    },
+    "cranberry_usage": {
+      "start_year": {
+        "purpose": "Canonical release year for release validation",
+        "type": "int/float",
+        "validation": "If start_year > current_year, content is unreleased"
+      },
+      "premiere_date": {
+        "purpose": "Original series premiere date (may be S1 for TV)",
+        "type": "date string",
+        "warning": "NOT reliable for season-level release validation - often inherits from parent series"
+      },
+      "status": {
+        "purpose": "Release status indicator",
+        "type": "string",
+        "values": [
+          "Released",
+          "Upcoming",
+          "Unknown",
+          "Announced",
+          "In Production"
+        ],
+        "validation": "If status in [Upcoming, Announced, In Production], content is unreleased"
+      }
+    },
+    "release_validation_rules": {
+      "rule_1": "Primary: Check status field - if 'Upcoming' or similar, block allocation",
+      "rule_2": "Secondary: Check start_year > current_year - if true, block allocation",
+      "rule_3": "DO NOT use premiere_date for release validation (inherits from series)",
+      "rule_4": "For seasons, start_year indicates the SEASON release year, not series"
+    }
+  },
+  "_end_date_field_mappings": {
+    "description": "Canonical mapping of series END date fields across data sources",
+    "added": "2026-01-14",
+    "reason": "Different APIs use different fields for series conclusion. This ensures consistent interpretation of when a show ended.",
+    "canonical_field": "end_year",
+    "canonical_purpose": "The year a TV series concluded. NULL/empty if series is ongoing.",
+    "source_mappings": {
+      "imdb": {
+        "field": "endYear",
+        "format": "YYYY",
+        "level": "series",
+        "notes": "When series finished airing. NULL if ongoing.",
+        "ui_term": "Series End Year",
+        "example": "Breaking Bad endYear=2013"
+      },
+      "tmdb": {
+        "fields": [
+          "last_air_date",
+          "status",
+          "in_production"
+        ],
+        "level": "series",
+        "notes": "last_air_date is the final episode air date. status can be 'Ended', 'Returning Series', 'Canceled'. in_production is boolean.",
+        "status_values": [
+          "Ended",
+          "Returning Series",
+          "Canceled",
+          "In Production",
+          "Planned"
+        ],
+        "example": "Breaking Bad last_air_date=2013-09-29, status=Ended, in_production=false"
+      },
+      "flixpatrol": {
+        "field": null,
+        "notes": "FlixPatrol focuses on streaming availability, not production metadata. Does not track series end dates directly.",
+        "alternative": "Use release/premiere dates for availability tracking",
+        "bfd_mapping": null,
+        "action": "SKIP"
+      }
+    },
+    "streaming_availability_terms": {
+      "description": "Streaming services use availability terms, NOT series end dates",
+      "hulu": {
+        "term": "Expiring",
+        "format": "Exp. X days",
+        "meaning": "Content leaving platform due to licensing expiration, NOT series cancellation",
+        "example": "Exp. 10 days"
+      },
+      "apple_tv": {
+        "terms": [
+          "Leaving Soon",
+          "Available Until"
+        ],
+        "meaning": "Content availability window ending, NOT series conclusion",
+        "notes": "Internal field names not publicly available"
+      },
+      "netflix": {
+        "term": "Last Day to Watch",
+        "meaning": "Licensing expiration date"
+      },
+      "amazon_prime": {
+        "terms": [
+          "Leaving Prime",
+          "Available Until"
+        ],
+        "meaning": "Content leaving Prime Video catalog"
+      }
+    },
+    "cranberry_usage": {
+      "end_year": {
+        "purpose": "Year series concluded (NULL if ongoing)",
+        "type": "int/float/NULL",
+        "validation": "If end_year is not NULL and < current_year, series has concluded"
+      },
+      "status": {
+        "purpose": "Current production status",
+        "type": "string",
+        "ended_values": [
+          "Ended",
+          "Canceled"
+        ],
+        "ongoing_values": [
+          "Released",
+          "Returning Series"
+        ],
+        "notes": "For last season detection: if status in ['Ended', 'Canceled'] AND season_number = max(season_number), it's the final season"
+      }
+    },
+    "last_season_detection": {
+      "rule_1": "If end_year is populated AND end_year <= current_year, series has ended",
+      "rule_2": "If status in ['Ended', 'Canceled'], series has ended",
+      "rule_3": "Last season = MAX(season_number) WHERE imdb_id = series_id",
+      "rule_4": "For ended series, views decay should be accelerated (no new content expected)",
+      "implementation": "JOIN on imdb_id to find max season_number, mark is_final_season=True"
+    },
+    "ingestion_validation": {
+      "on_ingest": [
+        "If end_year provided and > start_year: validate series timeline",
+        "If end_year < start_year: DATA ERROR - flag for review",
+        "If status='Ended' but end_year is NULL: attempt to infer from last_air_date",
+        "If in_production=false but status='Returning Series': DATA INCONSISTENCY"
+      ],
+      "cross_source_reconciliation": [
+        "Prefer IMDb endYear as canonical (most reliable)",
+        "Use TMDB status as secondary confirmation",
+        "FlixPatrol: N/A for end dates"
+      ]
+    }
+  },
+  "_season_end_date_retrieval_rules": {
+    "description": "CANONICAL rules for retrieving TV season end dates from external APIs and datasets",
+    "added": "2026-01-19",
+    "version": "23.00",
+    "reason": "Season end dates are not directly available from most APIs. This section documents the correct retrieval workflow to determine when each season concluded.",
+    "canonical_field": "season_end_date",
+    "canonical_purpose": "The air date of the final episode of a specific TV season. NULL if season is currently airing or unannounced.",
+    "retrieval_sources": {
+      "tmdb_api": {
+        "description": "RECOMMENDED: The Movie Database API provides the most structured access to season-level data",
+        "priority": 1,
+        "methods": {
+          "method_1_season_episodes": {
+            "name": "Season Episodes List",
+            "endpoint": "/tv/{tv_id}/season/{season_number}",
+            "documentation": "https://developer.themoviedb.org/reference/tv-season-details",
+            "retrieval_logic": "Retrieve the list of all episodes in a season. The air_date of the LAST episode in the array is the season end date.",
+            "response_path": "episodes[-1].air_date",
+            "example_request": "GET https://api.themoviedb.org/3/tv/1396/season/1?api_key={api_key}",
+            "example_response": {
+              "episodes": [
+                {
+                  "episode_number": 1,
+                  "air_date": "2008-01-20",
+                  "name": "Pilot"
+                },
+                {
+                  "episode_number": 7,
+                  "air_date": "2008-03-09",
+                  "name": "A No-Rough-Stuff-Type Deal"
+                }
+              ],
+              "season_end_date_derived": "2008-03-09"
+            },
+            "notes": "Most reliable method. Works for any season with aired episodes.",
+            "rate_limit": "Requires one API call per season"
+          },
+          "method_2_last_episode_to_air": {
+            "name": "Last Episode To Air (Current Season Only)",
+            "endpoint": "/tv/{tv_id}?append_to_response=last_episode_to_air",
+            "documentation": "https://developer.themoviedb.org/reference/tv-series-details",
+            "retrieval_logic": "Use append_to_response on TV details call to include last_episode_to_air object. Best for CURRENT season tracking.",
+            "response_path": "last_episode_to_air.air_date",
+            "example_request": "GET https://api.themoviedb.org/3/tv/1396?append_to_response=last_episode_to_air&api_key={api_key}",
+            "example_response": {
+              "last_episode_to_air": {
+                "air_date": "2013-09-29",
+                "episode_number": 16,
+                "season_number": 5,
+                "name": "Felina"
+              }
+            },
+            "notes": "More efficient for tracking currently-airing shows. Only returns the most recent episode across ALL seasons.",
+            "limitation": "Only returns the LATEST episode to air, not per-season end dates",
+            "use_case": "Best for: Monitoring if new episodes have aired"
+          }
+        },
+        "workflow": {
+          "step_1": "Get the tv_id using /search/tv or lookup by external ID (/find/{external_id})",
+          "step_2": "Call /tv/{tv_id} to get number_of_seasons",
+          "step_3": "For each season, call /tv/{tv_id}/season/{season_number} and extract episodes[-1].air_date as season_end_date"
+        }
+      },
+      "imdb_datasets": {
+        "description": "IMDb provides data via official bulk datasets. No direct REST API for season-specific metadata.",
+        "priority": 3,
+        "source_url": "https://datasets.imdbws.com/",
+        "update_frequency": "Daily",
+        "relevant_files": {
+          "title_episode_tsv": {
+            "filename": "title.episode.tsv.gz",
+            "description": "Contains episode-level data including air dates",
+            "columns": [
+              "tconst",
+              "parentTconst",
+              "seasonNumber",
+              "episodeNumber"
+            ],
+            "note": "Air dates must be joined with title.basics.tsv"
+          },
+          "title_basics_tsv": {
+            "filename": "title.basics.tsv.gz",
+            "description": "Contains startYear for each episode",
+            "columns": [
+              "tconst",
+              "titleType",
+              "primaryTitle",
+              "startYear",
+              "endYear",
+              "runtimeMinutes",
+              "genres"
+            ],
+            "note": "startYear here is the episode air year"
+          },
+          "title_akas_tsv": {
+            "filename": "title.akas.tsv.gz",
+            "description": "Contains regional titles and additional date info",
+            "use_case": "Cross-reference for international release dates"
+          }
+        },
+        "retrieval_logic": {
+          "step_1": "Query title.episode.tsv for all episodes WHERE parentTconst = series_tconst AND seasonNumber = target_season",
+          "step_2": "Join with title.basics.tsv ON tconst to get startYear for each episode",
+          "step_3": "Season end date = MAX(startYear) OR startYear of MAX(episodeNumber) for that season",
+          "sql_example": "SELECT e.parentTconst, e.seasonNumber, MAX(b.startYear) as season_end_year\nFROM title_episode e\nJOIN title_basics b ON e.tconst = b.tconst\nWHERE e.parentTconst = 'tt0903747'\nGROUP BY e.parentTconst, e.seasonNumber"
+        },
+        "limitations": [
+          "Only provides YEAR granularity, not exact date",
+          "Requires downloading and processing large TSV files",
+          "Some episodes may have NULL startYear"
+        ]
+      },
+      "omdb_api": {
+        "description": "OMDb API (Open Movie Database) provides simplified access to IMDb data including series date ranges",
+        "priority": 4,
+        "documentation": "https://www.omdbapi.com/",
+        "endpoint": "https://www.omdbapi.com/?t={title}&type=series&apikey={apikey}",
+        "retrieval_field": "Year",
+        "format": "YYYY or YYYY-YYYY (e.g., \"2008-2013\" for Breaking Bad)",
+        "example_request": "GET https://www.omdbapi.com/?t=Breaking+Bad&type=series&apikey=xxx",
+        "example_response": {
+          "Title": "Breaking Bad",
+          "Year": "2008-2013",
+          "totalSeasons": "5",
+          "Response": "True"
+        },
+        "parsing_logic": {
+          "if_single_year": "Series is ongoing or single-season miniseries",
+          "if_range": "Split on hyphen; second value is series end year (applies to final season)",
+          "example": "2008-2013 means series ended in 2013, final season (S5) ended in 2013"
+        },
+        "limitations": [
+          "Only provides series-level end year, not per-season granularity",
+          "Year range applies to entire series, not individual seasons",
+          "Requires additional logic to map end year to specific season"
+        ],
+        "use_case": "Quick check for series completion status. Not suitable for season-specific end dates."
+      },
+      "tvmaze_api": {
+        "description": "ALTERNATIVE: TVMaze API is known for highly accurate episode-level air dates",
+        "priority": 2,
+        "documentation": "https://www.tvmaze.com/api",
+        "endpoint": "https://api.tvmaze.com/shows/{show_id}/episodes",
+        "free_tier": true,
+        "rate_limit": "20 calls per 10 seconds",
+        "retrieval_logic": {
+          "step_1": "Search for show: GET https://api.tvmaze.com/singlesearch/shows?q={title}",
+          "step_2": "Get all episodes: GET https://api.tvmaze.com/shows/{id}/episodes",
+          "step_3": "Filter episodes by season, get MAX(airdate) for that season"
+        },
+        "example_response": {
+          "id": 169,
+          "name": "Breaking Bad",
+          "episodes_sample": [
+            {
+              "season": 5,
+              "number": 16,
+              "airdate": "2013-09-29",
+              "name": "Felina"
+            }
+          ]
+        },
+        "advantages": [
+          "Highly accurate air dates",
+          "Free API with no key required for basic access",
+          "Includes episode-level granularity",
+          "Fast response times"
+        ],
+        "note": "TVMaze is particularly useful when TMDB data is missing or when needing secondary validation"
+      },
+      "rapidapi_imdb": {
+        "description": "Third-party IMDb APIs available on RapidAPI marketplace",
+        "priority": 5,
+        "documentation": "https://rapidapi.com/search/imdb",
+        "note": "Multiple providers with varying accuracy and rate limits",
+        "recommended_apis": [
+          "IMDb API (StefanoMontanelli)",
+          "MoviesDatabase"
+        ],
+        "use_case": "Fallback when official sources are unavailable",
+        "cost": "Freemium models with paid tiers for higher limits"
+      }
+    },
+    "retrieval_summary_table": {
+      "description": "Quick reference for season end date retrieval by source",
+      "columns": [
+        "Source",
+        "Method",
+        "Key Data Point",
+        "Granularity",
+        "Priority"
+      ],
+      "rows": [
+        [
+          "TMDB API",
+          "/tv/{id}/season/{n}",
+          "episodes[-1].air_date",
+          "Exact date",
+          1
+        ],
+        [
+          "TMDB API",
+          "/tv/{id} + append_to_response",
+          "last_episode_to_air.air_date",
+          "Exact date (latest only)",
+          1
+        ],
+        [
+          "TVMaze API",
+          "/shows/{id}/episodes",
+          "MAX(airdate) per season",
+          "Exact date",
+          2
+        ],
+        [
+          "IMDb Dataset",
+          "title.episode + title.basics",
+          "MAX(startYear) per season",
+          "Year only",
+          3
+        ],
+        [
+          "OMDb API",
+          "?t={title}",
+          "Year (e.g., 2010-2015)",
+          "Series end year",
+          4
+        ]
+      ]
+    },
+    "accuracy_considerations": {
+      "currently_airing_seasons": {
+        "warning": "Season finales are often added to databases as they air. If a season is currently airing, the \"end date\" may not be available until the final episode is added.",
+        "recommendation": "Check the series status field (TMDB: status, IMDb: endYear NULL) before assuming end_date is final",
+        "detection_logic": "If TMDB status = \"Returning Series\" AND season_number = number_of_seasons, the final episode air_date may change"
+      },
+      "missing_data": {
+        "tmdb_null_dates": "Some episodes have NULL air_date in TMDB. Fall back to TVMaze or IMDb.",
+        "limited_series": "Miniseries may not have season structure - treat entire run as single season",
+        "international_content": "Non-English content may have delayed or incorrect air dates. Cross-validate with local sources."
+      },
+      "validation_checks": [
+        "season_end_date must be >= season_start_date",
+        "season_end_date for season N must be <= season_start_date for season N+1",
+        "If series status = \"Ended\", final season should have a valid end_date"
+      ]
+    },
+    "cranberry_implementation": {
+      "column_name": "season_end_date",
+      "dtype": "str",
+      "format": "YYYY-MM-DD",
+      "nullable": true,
+      "null_meaning": "Season currently airing, unannounced, or data unavailable",
+      "derivation_priority": [
+        "1. TMDB /tv/{tv_id}/season/{season_number} episodes[-1].air_date",
+        "2. TVMaze /shows/{id}/episodes filtered by season",
+        "3. IMDb title.episode.tsv joined with title.basics.tsv (year only, use YYYY-12-31)",
+        "4. OMDb Year field (series-level, apply to final season only)"
+      ],
+      "ingestion_workflow": {
+        "on_new_season": [
+          "Fetch season details from TMDB",
+          "Extract last episode air_date",
+          "If NULL, attempt TVMaze lookup",
+          "If still NULL, leave NULL and mark for manual review"
+        ],
+        "on_season_complete": [
+          "Verify all episodes are present",
+          "Confirm last episode air_date matches expected finale",
+          "Update season_end_date with validated date"
+        ]
+      }
+    },
+    "api_configuration": {
+      "tmdb": {
+        "base_url": "https://api.themoviedb.org/3",
+        "auth": "API Key or Bearer Token",
+        "rate_limit": "40 requests/10 seconds",
+        "required_endpoints": [
+          "/tv/{tv_id}",
+          "/tv/{tv_id}/season/{season_number}"
+        ]
+      },
+      "tvmaze": {
+        "base_url": "https://api.tvmaze.com",
+        "auth": "None (free tier) or API key (premium)",
+        "rate_limit": "20 requests/10 seconds",
+        "required_endpoints": [
+          "/singlesearch/shows",
+          "/shows/{id}/episodes"
+        ]
+      },
+      "omdb": {
+        "base_url": "https://www.omdbapi.com",
+        "auth": "API Key",
+        "rate_limit": "1000/day (free tier)",
+        "required_params": [
+          "t",
+          "type=series",
+          "apikey"
+        ]
+      }
+    },
+    "validation_rules": {
+      "rule_1": "Always attempt TMDB retrieval first (priority 1)",
+      "rule_2": "Use TVMaze as secondary validation for critical titles",
+      "rule_3": "If only year available (IMDb/OMDb), format as YYYY-12-31 for season_end_date",
+      "rule_4": "Never assume current season has ended - check series status first",
+      "rule_5": "Log all retrieval failures for manual review queue"
+    }
+  },
+  "_max_seasons_field_mappings": {
+    "description": "MISSION CRITICAL: Canonical mapping of total season count fields. Controls season row production/appending.",
+    "added": "2026-01-14",
+    "criticality": "CATASTROPHIC if wrong - controls database row production",
+    "reason": "max_seasons determines how many season rows exist for a series. Wrong values cause database corruption.",
+    "canonical_field": "max_seasons",
+    "canonical_purpose": "Total number of seasons for a TV series. MUST match actual season_number rows in database.",
+    "source_mappings": {
+      "imdb": {
+        "field": null,
+        "derivation": "COUNT(DISTINCT seasonNumber) WHERE parentTconst = series_id",
+        "level": "series",
+        "notes": "IMDb does not have a single total_seasons field. Must derive from seasonNumber range in title.episode.tsv.",
+        "example": "Breaking Bad: max(seasonNumber) where parentTconst=tt0903747 = 5"
+      },
+      "tmdb": {
+        "field": "number_of_seasons",
+        "level": "series",
+        "notes": "Direct field in TV show details API response. Most reliable source.",
+        "api_endpoint": "/tv/{tv_id}",
+        "example": "Breaking Bad number_of_seasons=5"
+      },
+      "flixpatrol": {
+        "field": "seasons",
+        "alternatives": [
+          "Number of Seasons"
+        ],
+        "level": "title",
+        "notes": "Used in Kaggle datasets and API exports.",
+        "example": "seasons=5",
+        "bfd_mapping": "max_seasons",
+        "action": "MERGE",
+        "priority": 3
+      }
+    },
+    "streaming_service_terms": {
+      "hulu": {
+        "term": "Number of Seasons",
+        "alternatives": [
+          "Seasons"
+        ],
+        "notes": "User-friendly label in content partner guidebook"
+      },
+      "apple_tv": {
+        "term": null,
+        "notes": "Does not display total season count. Uses 'Season Finale' / 'Series Finale' in episode descriptions.",
+        "internal_term": "Planned Number of Seasons (likely, not confirmed)"
+      },
+      "netflix": {
+        "term": "Seasons",
+        "notes": "Displayed as 'X Seasons' in show details"
+      },
+      "amazon_prime": {
+        "term": "Seasons",
+        "notes": "Displayed in show metadata"
+      }
+    },
+    "cranberry_usage": {
+      "max_seasons": {
+        "purpose": "Total season count for series - CONTROLS ROW PRODUCTION",
+        "type": "int",
+        "critical": true,
+        "validation": "MUST equal COUNT(DISTINCT season_number) WHERE imdb_id = series_id"
+      },
+      "season_number": {
+        "purpose": "Season number for this specific row",
+        "type": "int",
+        "validation": "Must be <= max_seasons for the series"
+      }
+    },
+    "audit_requirements": {
+      "description": "MANDATORY audits to prevent database corruption",
+      "audit_1_row_count": {
+        "check": "For each imdb_id, COUNT(rows) must equal max_seasons",
+        "query": "SELECT imdb_id, max_seasons, COUNT(*) as actual FROM tv_seasons GROUP BY imdb_id HAVING max_seasons != COUNT(*)",
+        "severity": "CRITICAL - stops production if violated"
+      },
+      "audit_2_sequence": {
+        "check": "season_number must be sequential 1,2,3...max_seasons with no gaps",
+        "query": "Verify MIN(season_number)=1 AND MAX(season_number)=max_seasons AND COUNT(DISTINCT season_number)=max_seasons",
+        "severity": "CRITICAL - indicates missing season rows"
+      },
+      "audit_3_cross_source": {
+        "check": "max_seasons must match TMDB number_of_seasons",
+        "tolerance": "Allow +-1 for recently released seasons",
+        "severity": "HIGH - may indicate stale data"
+      },
+      "audit_4_orphan_detection": {
+        "check": "No season_number > max_seasons",
+        "query": "SELECT * FROM tv_seasons WHERE season_number > max_seasons",
+        "severity": "CRITICAL - orphan rows indicate data corruption"
+      }
+    },
+    "ingestion_rules": {
+      "on_new_series": [
+        "Fetch number_of_seasons from TMDB API",
+        "Cross-validate with IMDb season count if available",
+        "Create exactly max_seasons rows with season_number 1 to max_seasons"
+      ],
+      "on_new_season_announced": [
+        "Increment max_seasons by 1",
+        "Create new row with season_number = old_max_seasons + 1",
+        "Verify no duplicate season_number created"
+      ],
+      "on_season_cancelled": [
+        "Do NOT decrement max_seasons if row already exists",
+        "Mark season status as 'Cancelled' instead",
+        "Verify row integrity after update"
+      ]
+    }
+  },
+  "_star_schema_architecture": {
+    "description": "ALGO 95.2 uses a STAR SCHEMA with two primary tables",
+    "rationale": [
+      "Column explosion avoided: 4,320 platform columns -> 7 columns in dimension table",
+      "Sparse efficiency: Only stores views WHERE title is ACTUALLY available",
+      "Query flexibility: Easy aggregation by platform, country, period",
+      "Availability-aware: Uses streaming_lookup_*.json as ground truth"
+    ],
+    "tables": {
+      "Cranberry_Titles": {
+        "type": "FACT_TABLE",
+        "description": "Main title catalog with total and country-level views",
+        "file_pattern": "Cranberry_Titles_V*.parquet",
+        "primary_key": "fc_uid",
+        "row_count_estimate": "~770,000",
+        "column_categories": [
+          "canonical_columns (74)",
+          "x_feature_columns (20)",
+          "y_ground_truth_columns (12)",
+          "audit_columns (16)",
+          "wvv_columns (7)",
+          "temporal_total_views (~32 columns for total x 8 periods x 4 years)",
+          "temporal_country_views (~576 columns for 18 countries x 8 periods x 4 years)"
+        ],
+        "total_columns_estimate": "~700-1,200"
+      },
+      "Cranberry_Platform_Views": {
+        "type": "DIMENSION_TABLE",
+        "description": "Platform-level view allocation (SPARSE - only where title available)",
+        "file_pattern": "Cranberry_Platform_Views_V*.parquet",
+        "primary_key": [
+          "fc_uid",
+          "country",
+          "platform",
+          "period",
+          "year"
+        ],
+        "foreign_key": "fc_uid -> Cranberry_Titles.fc_uid",
+        "row_count_estimate": "~30-50 million (sparse)",
+        "columns": {
+          "fc_uid": {
+            "dtype": "str",
+            "description": "Foreign key to Cranberry_Titles"
+          },
+          "country": {
+            "dtype": "str",
+            "description": "ISO country code (18 values)"
+          },
+          "platform": {
+            "dtype": "str",
+            "description": "Platform identifier (netflix, prime, disney, etc.)"
+          },
+          "period": {
+            "dtype": "str",
+            "description": "Temporal period (q1, q2, q3, q4, h1, h2)"
+          },
+          "year": {
+            "dtype": "int16",
+            "description": "Year (2023-2026)"
+          },
+          "views": {
+            "dtype": "int64",
+            "description": "Allocated views for this title/country/platform/period"
+          },
+          "confidence": {
+            "dtype": "float32",
+            "description": "Confidence score 0-1 based on data quality"
+          }
+        },
+        "total_columns": 7,
+        "storage_efficiency": "~85% reduction vs column approach (sparse matrix)"
+      }
+    },
+    "join_specification": {
+      "join_type": "LEFT JOIN",
+      "join_key": "fc_uid",
+      "example_query": "SELECT t.title, p.country, p.platform, SUM(p.views) FROM Cranberry_Titles t LEFT JOIN Cranberry_Platform_Views p ON t.fc_uid = p.fc_uid GROUP BY t.title, p.country, p.platform"
+    }
+  },
+  "_streaming_platforms_master": {
+    "description": "Global Streaming Platforms Master Reference - 85 platforms with canonical names, aliases, and subscriber data",
+    "master_file": "Components/worlds_streaming_platforms_by_country.json",
+    "total_platforms": 85,
+    "total_subscribers_m": 1558.9,
+    "bfd_tracked_count": 51,
+    "top_10_by_subscribers": [
+      {
+        "canonical": "netflix",
+        "subscribers_m": 301.6,
+        "region": "global"
+      },
+      {
+        "canonical": "amazon_prime_video",
+        "subscribers_m": 200.0,
+        "region": "global"
+      },
+      {
+        "canonical": "disney_plus",
+        "subscribers_m": 127.8,
+        "region": "global"
+      },
+      {
+        "canonical": "max_hbo",
+        "subscribers_m": 125.7,
+        "region": "usa"
+      },
+      {
+        "canonical": "tencent_video",
+        "subscribers_m": 117.0,
+        "region": "cn"
+      },
+      {
+        "canonical": "iqiyi",
+        "subscribers_m": 101.1,
+        "region": "cn"
+      },
+      {
+        "canonical": "paramount_plus",
+        "subscribers_m": 77.7,
+        "region": "usa"
+      },
+      {
+        "canonical": "hulu",
+        "subscribers_m": 55.5,
+        "region": "usa"
+      },
+      {
+        "canonical": "peacock",
+        "subscribers_m": 41.0,
+        "region": "usa"
+      },
+      {
+        "canonical": "hotstar",
+        "subscribers_m": 35.9,
+        "region": "in"
+      }
+    ],
+    "usage": "Use canonical_lookup for platform name normalization. Use bfd_tracked list for platforms with viewership tracking."
+  },
+  "_availability_gate": {
+    "description": "Platform views ONLY allocated where title is ACTUALLY available per streaming_lookup_*.json",
+    "master_reference": "Components/worlds_streaming_platforms_by_country.json",
+    "lookup_files": {
+      "us": "streaming_lookup_us.json",
+      "gb": "streaming_lookup_gb.json",
+      "de": "streaming_lookup_de.json",
+      "fr": "streaming_lookup_fr.json",
+      "es": "streaming_lookup_es.json",
+      "it": "streaming_lookup_it.json",
+      "nl": "streaming_lookup_nl.json",
+      "se": "streaming_lookup_se.json",
+      "jp": "streaming_lookup_jp.json",
+      "kr": "streaming_lookup_kr.json",
+      "in": "streaming_lookup_in.json",
+      "au": "streaming_lookup_au.json",
+      "br": "streaming_lookup_br.json",
+      "mx": "streaming_lookup_mx.json",
+      "ca": "streaming_lookup_ca.json",
+      "sg": "streaming_lookup_sg.json",
+      "global": "streaming_lookup_global.json",
+      "row": "streaming_lookup_row.json"
+    },
+    "lookup_path": "Streamers By Country/",
+    "justwatch_data_path": "Streamers By Country/",
+    "justwatch_countries": [
+      "ae",
+      "ar",
+      "at",
+      "au",
+      "be",
+      "br",
+      "ca",
+      "ch",
+      "co",
+      "cz",
+      "de",
+      "eg",
+      "es",
+      "fi",
+      "fr",
+      "gb",
+      "gr",
+      "hu",
+      "id",
+      "ie",
+      "in",
+      "it",
+      "jp",
+      "kr",
+      "mx",
+      "my",
+      "no",
+      "nz",
+      "pe",
+      "ph",
+      "pl",
+      "pt",
+      "ro",
+      "ru",
+      "sa",
+      "se",
+      "sg",
+      "tr",
+      "tw",
+      "us",
+      "za"
+    ],
+    "allocation_rules": {
+      "rule_1": "Load streaming_lookup_{country}.json for target country",
+      "rule_2": "For each title, check if imdb_id exists in ANY platform's title list",
+      "rule_3": "If title NOT available on ANY platform in country: allocate 0 views to ALL platforms",
+      "rule_4": "If title available on 1+ platforms: proportionally allocate among ONLY those platforms",
+      "rule_5": "Apply genre-platform affinity weights AFTER availability gate"
+    },
+    "fallback_behavior": {
+      "unknown_availability": "If title not found in lookup, use platform market share (no availability gate)",
+      "missing_lookup_file": "Fall back to streaming_lookup_row.json",
+      "confidence_adjustment": "Reduce confidence by 0.2 when using fallback"
+    },
+    "example_allocation": {
+      "title": "Breaking Bad S1",
+      "country": "gb",
+      "country_views": 1000000,
+      "available_platforms": [
+        "netflix",
+        "prime"
+      ],
+      "platform_shares": {
+        "netflix": 0.6,
+        "prime": 0.4
+      },
+      "allocated": {
+        "netflix": 600000,
+        "prime": 400000,
+        "disney": 0,
+        "apple": 0
+      },
+      "note": "Views only go to platforms where title is actually available"
+    }
+  },
+  "_platform_allocation_formula": {
+    "description": "Three-step view allocation cascade with availability-aware platform split",
+    "STEP_1_total": {
+      "formula": "V_total = ML_ensemble \u00d7 scale_factor \u00d7 S_i \u00d7 T_g \u00d7 period_weight",
+      "output": "Single total view count per title per period",
+      "output_column": "views_{period}_{year}_total",
+      "note": "RENAMED from V_global in V22.00 for clarity"
+    },
+    "STEP_2_country": {
+      "formula": "V_country = V_total \u00d7 country_weight_pct",
+      "source": "country_viewership_weights_2025.json",
+      "output": "18 country-level view counts per title per period",
+      "output_columns": "views_{period}_{year}_{country_code}"
+    },
+    "STEP_3_platform": {
+      "formula": "V_platform = V_country \u00d7 availability_mask \u00d7 platform_share \u00d7 genre_affinity",
+      "components": {
+        "availability_mask": "1 if title available on platform in country, 0 otherwise (from streaming_lookup_*.json)",
+        "platform_share": "Market share of platform in country (from platform_allocation_weights.json)",
+        "genre_affinity": "Genre-platform affinity multiplier (from platform_allocation_weights.json)"
+      },
+      "normalization": "After applying availability mask, re-normalize platform shares to sum to 1.0",
+      "output": "Rows in Cranberry_Platform_Views table"
+    },
+    "conservation_law": "SUM(V_country for all 18 countries) = V_total (views conserved, just distributed)"
+  },
+  "_platform_exclusivity_v95.2": {
+    "description": "Studio-based and origin-based platform exclusivity overrides (v95.2)",
+    "component_files": {
+      "studio_exclusivity": "Components/platform_exclusivity_patterns.json",
+      "international_exclusivity": "Components/international_content_exclusivity.json",
+      "api_availability": "Components/streaming_api_platform_availability.json",
+      "canonical_mapping": "Components/platform_canonical_mapping.json"
+    },
+    "studio_exclusivity_rules": {
+      "description": "UK content exclusivity to Western markets",
+      "bbc_itv_to_britbox": {
+        "origin_studios": [
+          "BBC",
+          "BBC Studios",
+          "ITV",
+          "ITV Studios"
+        ],
+        "target_platform": "britbox",
+        "target_countries": [
+          "US",
+          "CA",
+          "AU",
+          "ZA"
+        ],
+        "market_share_override_pct": 45,
+        "examples": [
+          "Agatha Christie adaptations",
+          "Midsomer Murders",
+          "Vera"
+        ]
+      }
+    },
+    "international_content_exclusivity": {
+      "description": "Non-English content with exclusive Western streaming deals",
+      "korean_content": {
+        "platforms": {
+          "netflix": 40,
+          "viki": 35,
+          "kocowa": 15
+        },
+        "studios": [
+          "CJ ENM",
+          "Studio Dragon",
+          "JTBC Studios"
+        ]
+      },
+      "nordic_noir": {
+        "platforms": {
+          "viaplay": 55,
+          "mhz_choice": 25,
+          "netflix": 20
+        },
+        "countries": [
+          "SE",
+          "DK",
+          "NO",
+          "FI",
+          "IS"
+        ]
+      },
+      "japanese_anime": {
+        "platforms": {
+          "crunchyroll": 60,
+          "netflix": 25,
+          "hidive": 15
+        }
+      },
+      "turkish_dizi": {
+        "platforms": {
+          "netflix": 50,
+          "tabii": 30
+        }
+      }
+    },
+    "api_verified_platforms": {
+      "source": "Streaming Availability API (RapidAPI)",
+      "countries_verified": 60,
+      "key_findings": {
+        "netflix": {
+          "countries": 59,
+          "region": "Global"
+        },
+        "britbox": {
+          "countries": 4,
+          "region": "US, CA, AU, ZA only"
+        },
+        "zee5": {
+          "countries": 56,
+          "region": "Global (Indian focus)"
+        },
+        "hulu": {
+          "countries": 1,
+          "region": "US only"
+        },
+        "peacock": {
+          "countries": 1,
+          "region": "US only"
+        }
+      }
+    },
+    "implementation_in_phase_6_5": {
+      "step_1": "Load exclusivity rules from component files",
+      "step_2": "For each title, check studio/origin country against exclusivity patterns",
+      "step_3": "If exclusivity match: apply override percentage to target platform",
+      "step_4": "Reduce other platforms proportionally (conservation law preserved)",
+      "step_5": "Continue with normal availability gate and genre affinity"
+    }
+  },
+  "_social_signal_integration_v95.2": {
+    "description": "Multi-platform social signal integration for enhanced viewership prediction (v95.2)",
+    "strategy_document": "ALGO Engine/SOCIAL_SIGNAL_INTEGRATION_STRATEGY.md",
+    "component_files": {
+      "platform_weights": "Components/Social Signals/social_platform_weights.json",
+      "api_config": "Components/Social Signals/social_api_collection_config.json",
+      "title_metrics": "Components/Social Signals/social_title_metrics.parquet",
+      "talent_metrics": "Components/Social Signals/social_talent_metrics.parquet",
+      "trending_daily": "Components/Social Signals/social_trending_daily.parquet"
+    },
+    "platform_weights": {
+      "tiktok": {
+        "weight": 0.3,
+        "engagement_rate_pct": 5.0
+      },
+      "instagram": {
+        "weight": 0.25,
+        "engagement_rate_pct": 3.6
+      },
+      "twitter": {
+        "weight": 0.2,
+        "engagement_rate_pct": 2.0
+      },
+      "youtube": {
+        "weight": 0.15,
+        "engagement_rate_pct": 3.4
+      },
+      "facebook": {
+        "weight": 0.07,
+        "engagement_rate_pct": 1.5
+      },
+      "telegram": {
+        "weight": 0.03,
+        "engagement_rate_pct": null
+      }
+    },
+    "new_x_features_v95.2": {
+      "abs_social_buzz_v2": {
+        "dtype": "float32",
+        "range": "0-100",
+        "description": "Multi-platform weighted aggregate (6 platforms)"
+      },
+      "abs_tiktok_engagement": {
+        "dtype": "float32",
+        "range": "0-100",
+        "description": "TikTok-specific buzz score (highest impact platform)"
+      },
+      "abs_youtube_buzz": {
+        "dtype": "float32",
+        "range": "0-100",
+        "description": "YouTube mentions, trailer views"
+      },
+      "abs_talent_social_power": {
+        "dtype": "float32",
+        "range": "0-10",
+        "description": "Aggregate cast social footprint"
+      },
+      "abs_sentiment_score": {
+        "dtype": "float32",
+        "range": "0-1",
+        "description": "Positive sentiment ratio"
+      },
+      "abs_social_velocity_7d": {
+        "dtype": "float32",
+        "range": "-1 to +5",
+        "description": "7-day mention growth rate"
+      },
+      "abs_social_velocity_30d": {
+        "dtype": "float32",
+        "range": "-1 to +5",
+        "description": "30-day mention growth rate"
+      },
+      "abs_audience_demo_match": {
+        "dtype": "float32",
+        "range": "0-1",
+        "description": "Demographic alignment to content target"
+      }
+    },
+    "data_collection_schedule": {
+      "talent_metrics": {
+        "frequency": "weekly",
+        "requests": 40000
+      },
+      "title_trending": {
+        "frequency": "daily",
+        "requests": 30000
+      },
+      "geographic_trends": {
+        "frequency": "daily",
+        "requests": 540
+      }
+    },
+    "expected_impact": {
+      "mape_before": "~9%",
+      "mape_after": "~6.3%",
+      "improvement": "30% better",
+      "social_weight_before": "8%",
+      "social_weight_after": "24%"
+    },
+    "integration_point": "Phase 3: X-Feature Creation"
+  },
+  "_56_signals_framework": {
+    "_description": "ALGO 95.2 uses 56 correlated signals in 9 SETs for 92% quarterly / 75% daily accuracy",
+    "SET_1_platform_creative": {
+      "signals": [
+        "1_platform_analytics_marketing",
+        "2_creative_metadata_embeddings",
+        "3_social_engagement_metrics",
+        "4_campaign_spend_data",
+        "5_viewer_demographics",
+        "6_content_lifecycle_data"
+      ],
+      "count": 6,
+      "purpose": "Core platform and creative foundation"
+    },
+    "SET_2_macro_environmental": {
+      "signals": [
+        "7_annual_financial_reports",
+        "8_global_weather_seasonality",
+        "9_global_national_calendars",
+        "10_major_sporting_political_events",
+        "11_cultural_zeitgeist_index",
+        "12_economic_indicators"
+      ],
+      "count": 6,
+      "accuracy_lift": "+3-5%",
+      "purpose": "Macro context adjustment"
+    },
+    "SET_3_operational_realtime": {
+      "signals": [
+        "13_platform_analytics_daily",
+        "14_marketing_flight_data",
+        "15_social_media_trend_index",
+        "16_platform_release_calendar",
+        "17_weather_regional_events",
+        "18_economic_sentiment_feed"
+      ],
+      "count": 6,
+      "purpose": "Powers ~75% accuracy for 7/14/28-day forecasts"
+    },
+    "SET_4_genre_measurement": {
+      "signals": [
+        "19_measurement_mode",
+        "20_genre_view_density",
+        "21_genre_decay_coefficient",
+        "22_genre_momentum_index",
+        "23_genre_skew_ratio",
+        "24_genre_diversity_score",
+        "25_genre_seasonality_vector"
+      ],
+      "count": 7,
+      "purpose": "Genre-specific viewing kinetics"
+    },
+    "SET_5_platform_delivery": {
+      "signals": [
+        "26_dimension",
+        "27_completion_rate",
+        "28_mau_normalised_views",
+        "29_device_weighted_views",
+        "30_ad_tier_premium_share",
+        "31_region_language_split",
+        "32_platform_elasticity_coefficient"
+      ],
+      "count": 7,
+      "purpose": "Platform measurement normalization"
+    },
+    "SET_6_audience_behaviour": {
+      "signals": [
+        "33_metric_variable",
+        "34_binge_rate_index",
+        "35_drop_off_curve",
+        "36_rewatch_index",
+        "37_completion_to_exposure_ratio",
+        "38_viewer_cohort_retention",
+        "39_engagement_depth"
+      ],
+      "count": 7,
+      "purpose": "Audience lifecycle tracking"
+    },
+    "SET_7_context_layers": {
+      "signals": [
+        "40_context_layer",
+        "41_weather_seasonality",
+        "42_event_interference",
+        "43_holiday_calendar_effects",
+        "44_economic_sentiment",
+        "45_zeitgeist_index"
+      ],
+      "count": 6,
+      "purpose": "External context modifiers"
+    },
+    "SET_8_composite_metrics": {
+      "signals": [
+        "46_composite_metric",
+        "47_weighted_view_value_wvv",
+        "48_cultural_lift_score",
+        "49_platform_genre_interaction",
+        "50_predicted_view_stability_index"
+      ],
+      "count": 5,
+      "formulas": {
+        "47_wvv": "views x completion x beta_p x lambda_g^-1",
+        "48_cultural_lift": "delta_views_after / delta_views_before x zeitgeist_weight",
+        "49_platform_genre_interaction": "gamma_pg = views_pg / sum_g(views_p)",
+        "50_stability_index": "1 - var(views_t / mean(views))"
+      },
+      "purpose": "Derived composite signals"
+    },
+    "SET_9_time_horizons": {
+      "signals": [
+        "51_horizon",
+        "52_daily_hourly",
+        "53_weekly",
+        "54_quarterly",
+        "55_6_month",
+        "56_annual"
+      ],
+      "count": 6,
+      "accuracy_by_horizon": {
+        "daily_hourly": "~75%",
+        "weekly": "~80%",
+        "quarterly": "~92%",
+        "6_month": "~92%",
+        "annual": "~92%"
+      },
+      "purpose": "Temporal aggregation levels"
+    },
+    "total_signals": 56
+  },
+  "canonical_columns": [
+    "fc_uid",
+    "tmdb_id",
+    "imdb_id",
+    "thetvdb_id",
+    "trakt_id",
+    "flixpatrol_id",
+    "title",
+    "original_title",
+    "title_type",
+    "season_number",
+    "max_seasons",
+    "season_episodes",
+    "total_episodes",
+    "start_year",
+    "end_year",
+    "premiere_date",
+    "finale_date",
+    "runtime_minutes",
+    "genres",
+    "is_adult",
+    "status",
+    "original_language",
+    "country",
+    "regions",
+    "overview",
+    "tagline",
+    "age_certification",
+    "homepage",
+    "streaming_platform",
+    "streaming_platform_us",
+    "streaming_platform_uk",
+    "network",
+    "studio",
+    "production_country",
+    "studio_type",
+    "production_company_type_corrected",
+    "production_company_primary",
+    "studio_facility_type",
+    "studio_facility",
+    "studio_headquarters",
+    "studio_offices",
+    "studio_hits",
+    "production_companies",
+    "creators",
+    "directors",
+    "writers",
+    "producers",
+    "cast_data",
+    "budget",
+    "revenue",
+    "imdb_score",
+    "imdb_vote_count",
+    "tmdb_score",
+    "tmdb_vote_count",
+    "tmdb_popularity",
+    "rotten_tomatoes_score",
+    "metacritic_score",
+    "netflix_hours_viewed",
+    "netflix_views",
+    "nielsen_viewers_millions",
+    "flixpatrol_points",
+    "flixpatrol_rank",
+    "parrot_demand_expressions",
+    "source_api",
+    "source_apis_used",
+    "ingestion_timestamp",
+    "confidence_score",
+    "measurement_scope",
+    "poster",
+    "backdrop",
+    "trailer_url",
+    "videos",
+    "similar_content",
+    "keywords",
+    "imdb_url"
+  ],
+  "x_feature_columns": {
+    "_description": "20 Abstract X-Features from FC-BFD-Abstract-v12.00.parquet - ALL OPTIONAL/NULLABLE",
+    "_nullable": true,
+    "columns": [
+      "abs_social_buzz",
+      "abs_trend_velocity",
+      "abs_critical_score",
+      "abs_audience_score",
+      "abs_award_momentum",
+      "abs_seasonal_index",
+      "abs_search_volume",
+      "abs_twitter_mentions",
+      "abs_instagram_engagement",
+      "abs_news_aberration",
+      "abs_weather_impact",
+      "abs_holiday_weight",
+      "abs_sports_competition",
+      "abs_sub_growth_region",
+      "abs_decay_position",
+      "abs_franchise_value",
+      "abs_star_power",
+      "abs_budget_tier",
+      "abs_marketing_spend",
+      "abs_platform_reach"
+    ],
+    "count": 20
+  },
+  "y_ground_truth_columns": {
+    "_description": "12 Viewership Y-Ground Truth target columns",
+    "columns": [
+      "views_y",
+      "views_monthly",
+      "views_quarterly",
+      "views_domestic",
+      "views_international",
+      "views_emea",
+      "views_latam",
+      "views_apac",
+      "completion_rate",
+      "repetition_index",
+      "engagement_velocity",
+      "attribution_confidence"
+    ],
+    "count": 12
+  },
+  "audit_columns": {
+    "_description": "16 Audit & System Metadata columns",
+    "columns": [
+      "data_origin",
+      "source_system",
+      "source_reference",
+      "last_updated",
+      "row_hash",
+      "content_hash",
+      "is_deleted",
+      "validation_status",
+      "audit_log",
+      "created_at",
+      "modified_by",
+      "schema_version",
+      "canon_compliance",
+      "vram_allocation",
+      "reserved_1",
+      "reserved_2"
+    ],
+    "count": 16
+  },
+  "wvv_columns": {
+    "_description": "WVV calculation columns from ALGO 65.2",
+    "_formula": "WVV = Views x Completion x beta_p x lambda_g^-1",
+    "columns": [
+      "wvv",
+      "beta_p",
+      "lambda_g",
+      "lambda_g_inv",
+      "hours_per_view",
+      "binge_rate_index",
+      "rewatch_index"
+    ],
+    "count": 7
+  },
+  "nielsen_weekly_columns": {
+    "_description": "V26.00 NEW: Nielsen Weekly Streaming Top 10 data columns for weekly temporal granularity",
+    "_added": "2026-01-21",
+    "_source": "Nielsen Weekly Streaming Top 10 reports",
+    "columns": [
+      "nielsen_minutes_millions",
+      "avg_view_duration_min",
+      "streaming_platform_primary",
+      "period_start",
+      "period_end",
+      "views_weekly_us",
+      "views_weekly_total",
+      "views_weekly_cn",
+      "views_weekly_in",
+      "views_weekly_gb",
+      "views_weekly_br",
+      "views_weekly_de",
+      "views_weekly_jp",
+      "views_weekly_fr",
+      "views_weekly_ca",
+      "views_weekly_mx",
+      "views_weekly_au",
+      "views_weekly_es",
+      "views_weekly_it",
+      "views_weekly_kr",
+      "views_weekly_nl",
+      "views_weekly_se",
+      "views_weekly_sg",
+      "views_weekly_row",
+      "platform_subscribers",
+      "data_origin",
+      "us_weight_pct",
+      "conversion_formula"
+    ],
+    "count": 28,
+    "column_details": {
+      "nielsen_minutes_millions": {
+        "dtype": "int64",
+        "description": "Minutes viewed in millions as reported by Nielsen",
+        "nullable": true,
+        "example": 2375
+      },
+      "avg_view_duration_min": {
+        "dtype": "int32",
+        "description": "Average viewing duration assumption per view in minutes (VALUABLE for views calculation)",
+        "nullable": false,
+        "default": 15,
+        "note": "Critical for converting minutes to views: views = minutes / avg_view_duration_min"
+      },
+      "streaming_platform_primary": {
+        "dtype": "str",
+        "description": "Primary/source streaming platform for the title",
+        "nullable": true,
+        "examples": ["Netflix", "Disney+", "Prime Video", "Multi-Platform"]
+      },
+      "period_start": {
+        "dtype": "str",
+        "description": "Start date of measurement period",
+        "format": "YYYY-MM-DD",
+        "nullable": false,
+        "example": "2025-12-15"
+      },
+      "period_end": {
+        "dtype": "str",
+        "description": "End date of measurement period",
+        "format": "YYYY-MM-DD",
+        "nullable": false,
+        "example": "2025-12-21"
+      },
+      "views_weekly_us": {
+        "dtype": "int64",
+        "description": "Weekly views allocated to United States",
+        "weight_pct": 37.0,
+        "nullable": true
+      },
+      "views_weekly_total": {
+        "dtype": "int64",
+        "description": "Total weekly views worldwide before country allocation",
+        "nullable": true
+      },
+      "views_weekly_cn": {
+        "dtype": "int64",
+        "description": "Weekly views allocated to China",
+        "weight_pct": 12.5,
+        "nullable": true
+      },
+      "views_weekly_in": {
+        "dtype": "int64",
+        "description": "Weekly views allocated to India",
+        "weight_pct": 8.0,
+        "nullable": true
+      },
+      "views_weekly_gb": {
+        "dtype": "int64",
+        "description": "Weekly views allocated to United Kingdom",
+        "weight_pct": 6.5,
+        "nullable": true
+      },
+      "views_weekly_br": {
+        "dtype": "int64",
+        "description": "Weekly views allocated to Brazil",
+        "weight_pct": 5.0,
+        "nullable": true
+      },
+      "views_weekly_de": {
+        "dtype": "int64",
+        "description": "Weekly views allocated to Germany",
+        "weight_pct": 4.5,
+        "nullable": true
+      },
+      "views_weekly_jp": {
+        "dtype": "int64",
+        "description": "Weekly views allocated to Japan",
+        "weight_pct": 4.0,
+        "nullable": true
+      },
+      "views_weekly_fr": {
+        "dtype": "int64",
+        "description": "Weekly views allocated to France",
+        "weight_pct": 3.5,
+        "nullable": true
+      },
+      "views_weekly_ca": {
+        "dtype": "int64",
+        "description": "Weekly views allocated to Canada",
+        "weight_pct": 3.5,
+        "nullable": true
+      },
+      "views_weekly_mx": {
+        "dtype": "int64",
+        "description": "Weekly views allocated to Mexico",
+        "weight_pct": 3.0,
+        "nullable": true
+      },
+      "views_weekly_au": {
+        "dtype": "int64",
+        "description": "Weekly views allocated to Australia",
+        "weight_pct": 2.5,
+        "nullable": true
+      },
+      "views_weekly_es": {
+        "dtype": "int64",
+        "description": "Weekly views allocated to Spain",
+        "weight_pct": 2.0,
+        "nullable": true
+      },
+      "views_weekly_it": {
+        "dtype": "int64",
+        "description": "Weekly views allocated to Italy",
+        "weight_pct": 2.0,
+        "nullable": true
+      },
+      "views_weekly_kr": {
+        "dtype": "int64",
+        "description": "Weekly views allocated to South Korea",
+        "weight_pct": 1.8,
+        "nullable": true
+      },
+      "views_weekly_nl": {
+        "dtype": "int64",
+        "description": "Weekly views allocated to Netherlands",
+        "weight_pct": 1.0,
+        "nullable": true
+      },
+      "views_weekly_se": {
+        "dtype": "int64",
+        "description": "Weekly views allocated to Sweden",
+        "weight_pct": 0.7,
+        "nullable": true
+      },
+      "views_weekly_sg": {
+        "dtype": "int64",
+        "description": "Weekly views allocated to Singapore",
+        "weight_pct": 0.5,
+        "nullable": true
+      },
+      "views_weekly_row": {
+        "dtype": "int64",
+        "description": "Weekly views allocated to Rest of World",
+        "weight_pct": 2.0,
+        "nullable": true
+      },
+      "platform_subscribers": {
+        "dtype": "int64",
+        "description": "Platform subscriber count at time of measurement",
+        "nullable": true,
+        "example": 301630000
+      },
+      "data_origin": {
+        "dtype": "str",
+        "description": "Source of the data (e.g., Nielsen Weekly Streaming Top 10)",
+        "nullable": true
+      },
+      "us_weight_pct": {
+        "dtype": "float64",
+        "description": "US weight percentage used in country allocation",
+        "nullable": true,
+        "default": 37.0
+      },
+      "conversion_formula": {
+        "dtype": "str",
+        "description": "Formula used to calculate views from source metric",
+        "nullable": true,
+        "example": "minutes_millions * 1000000 / 15"
+      }
+    }
+  },
+  "column_dtype_reference": {
+    "_canonical": {
+      "fc_uid": "str",
+      "tmdb_id": "int64",
+      "imdb_id": "str",
+      "thetvdb_id": "int64",
+      "trakt_id": "int64",
+      "flixpatrol_id": "str",
+      "title": "str",
+      "original_title": "str",
+      "title_type": "str",
+      "season_number": "int32",
+      "max_seasons": "int32",
+      "season_episodes": "int32",
+      "total_episodes": "int32",
+      "start_year": "int32",
+      "end_year": "int32",
+      "premiere_date": "str",
+      "finale_date": "str",
+      "runtime_minutes": "int32",
+      "genres": "str",
+      "is_adult": "bool",
+      "status": "str",
+      "original_language": "str",
+      "country": "str",
+      "regions": "str",
+      "overview": "str",
+      "tagline": "str",
+      "age_certification": "str",
+      "homepage": "str",
+      "streaming_platform": "str",
+      "streaming_platform_usa": "str",
+      "streaming_platform_uk": "str",
+      "streaming_platform_row": "str",
+      "network": "str",
+      "studio": "str",
+      "production_country": "str",
+      "studio_type": "str",
+      "studio_headquarters": "str",
+      "studio_offices": "str",
+      "studio_hits": "str",
+      "production_companies": "str",
+      "creators": "str",
+      "directors": "str",
+      "writers": "str",
+      "producers": "str",
+      "cast_data": "str",
+      "budget": "float64",
+      "revenue": "float64",
+      "imdb_score": "float64",
+      "imdb_vote_count": "int32",
+      "tmdb_score": "float64",
+      "tmdb_vote_count": "int32",
+      "tmdb_popularity": "float64",
+      "rotten_tomatoes_score": "float64",
+      "metacritic_score": "float64",
+      "netflix_hours_viewed": "float64",
+      "netflix_views": "int64",
+      "nielsen_viewers_millions": "float64",
+      "flixpatrol_points": "float64",
+      "flixpatrol_rank": "int32",
+      "parrot_demand_expressions": "float64",
+      "source_api": "str",
+      "source_apis_used": "str",
+      "ingestion_timestamp": "str",
+      "confidence_score": "float64",
+      "measurement_scope": "str",
+      "poster": "str",
+      "backdrop": "str",
+      "trailer_url": "str",
+      "videos": "str",
+      "similar_content": "str",
+      "keywords": "str",
+      "imdb_url": "str",
+      "studio_facility": "str",
+      "studio_facility_type": "str",
+      "production_company_primary": "str",
+      "production_company_type_corrected": "str"
+    },
+    "_x_features": {
+      "abs_social_buzz": "float32",
+      "abs_trend_velocity": "float32",
+      "abs_critical_score": "float32",
+      "abs_audience_score": "float32",
+      "abs_award_momentum": "float32",
+      "abs_seasonal_index": "float32",
+      "abs_search_volume": "float32",
+      "abs_twitter_mentions": "int64",
+      "abs_instagram_engagement": "float32",
+      "abs_news_aberration": "float32",
+      "abs_weather_impact": "float32",
+      "abs_holiday_weight": "float32",
+      "abs_sports_competition": "float32",
+      "abs_sub_growth_region": "float32",
+      "abs_decay_position": "float32",
+      "abs_franchise_value": "float32",
+      "abs_star_power": "float32",
+      "abs_budget_tier": "int8",
+      "abs_marketing_spend": "float32",
+      "abs_platform_reach": "int64"
+    },
+    "_y_ground_truth": {
+      "views_y": "int64",
+      "views_monthly": "int64",
+      "views_quarterly": "int64",
+      "views_domestic": "int64",
+      "views_international": "int64",
+      "views_emea": "int64",
+      "views_latam": "int64",
+      "views_apac": "int64",
+      "completion_rate": "float32",
+      "repetition_index": "float32",
+      "engagement_velocity": "float32",
+      "attribution_confidence": "float32"
+    },
+    "_audit": {
+      "data_origin": "str",
+      "source_system": "str",
+      "source_reference": "str",
+      "last_updated": "datetime64[ns]",
+      "row_hash": "str",
+      "content_hash": "str",
+      "is_deleted": "bool",
+      "validation_status": "str",
+      "audit_log": "str",
+      "created_at": "datetime64[ns]",
+      "modified_by": "str",
+      "schema_version": "str",
+      "canon_compliance": "bool",
+      "vram_allocation": "int32",
+      "reserved_1": "str",
+      "reserved_2": "str"
+    },
+    "_wvv": {
+      "wvv": "float64",
+      "beta_p": "float32",
+      "lambda_g": "float32",
+      "lambda_g_inv": "float32",
+      "hours_per_view": "float32",
+      "binge_rate_index": "float32",
+      "rewatch_index": "float32"
+    },
+    "_temporal": {
+      "views_*_total": "int64",
+      "views_*_{country}": "int64",
+      "viewed_mins_*": "float64",
+      "wvv_*": "float64"
+    }
+  },
+  "x_feature_ranges": {
+    "abs_social_buzz": {
+      "min": 0,
+      "max": 100
+    },
+    "abs_trend_velocity": {
+      "min": -1,
+      "max": 1
+    },
+    "abs_critical_score": {
+      "min": 0,
+      "max": 100
+    },
+    "abs_audience_score": {
+      "min": 0,
+      "max": 100
+    },
+    "abs_award_momentum": {
+      "min": 0,
+      "max": 10
+    },
+    "abs_seasonal_index": {
+      "min": 0.75,
+      "max": 1.25
+    },
+    "abs_search_volume": {
+      "min": 0,
+      "max": 100
+    },
+    "abs_twitter_mentions": {
+      "min": 0,
+      "max": null
+    },
+    "abs_instagram_engagement": {
+      "min": 0,
+      "max": 1
+    },
+    "abs_news_aberration": {
+      "min": 0,
+      "max": 5
+    },
+    "abs_weather_impact": {
+      "min": 0.8,
+      "max": 1.2
+    },
+    "abs_holiday_weight": {
+      "min": 0.9,
+      "max": 1.35
+    },
+    "abs_sports_competition": {
+      "min": 0.6,
+      "max": 1.0
+    },
+    "abs_sub_growth_region": {
+      "min": -0.1,
+      "max": 0.3
+    },
+    "abs_decay_position": {
+      "min": 0,
+      "max": 1
+    },
+    "abs_franchise_value": {
+      "min": 0,
+      "max": 10
+    },
+    "abs_star_power": {
+      "min": 0,
+      "max": 10
+    },
+    "abs_budget_tier": {
+      "min": 1,
+      "max": 5
+    },
+    "abs_marketing_spend": {
+      "min": 0,
+      "max": 10
+    },
+    "abs_platform_reach": {
+      "min": 0,
+      "max": null
+    }
+  },
+  "uk_normalization_rules": {
+    "_RULE": "Store United Kingdom as 'gb'. Map from GB/GBR on ingestion. NEVER store as 'uk' or 'gbr'.",
+    "normalize_on_ingestion": true,
+    "canonical_code": "gb",
+    "map_from_codes": [
+      "gb",
+      "GB",
+      "gbr",
+      "GBR",
+      "great_britain",
+      "britain",
+      "united_kingdom",
+      "uk",
+      "UK"
+    ],
+    "invalid_storage_codes": [
+      "uk",
+      "UK",
+      "gbr",
+      "GBR"
+    ],
+    "applies_to": [
+      "column suffixes (e.g., streaming_platform_uk, views_h1_2023_gb)",
+      "country field values",
+      "regions field values",
+      "production_country field values"
+    ],
+    "mapping_function": "lambda x: 'gb' if x.lower() in ['gb', 'gbr', 'great_britain', 'britain', 'united_kingdom', 'uk'] else x"
+  },
+  "country_allocation_18": {
+    "_description": "ALGO 95.2 uses 22-country allocation from country_viewership_weights_2025.json",
+    "_v22_fix": "FIXED: Removed 'global' from countries list - it was incorrectly included as item #19",
+    "_calculation_order": [
+      "1. Calculate TOTAL views for title per temporal period (views_*_total)",
+      "2. Apply 18-country allocation percentages to distribute total views",
+      "3. Store in country-specific columns: views_{period}_{year}_{country}"
+    ],
+    "countries": {
+      "us": {
+        "name": "United States",
+        "weight_percent": 37.0,
+        "region": "North_America",
+        "confidence": "High"
+      },
+      "cn": {
+        "name": "China",
+        "weight_percent": 12.5,
+        "region": "Asia_Pacific",
+        "confidence": "High"
+      },
+      "in": {
+        "name": "India",
+        "weight_percent": 8.0,
+        "region": "Asia_Pacific",
+        "confidence": "Medium"
+      },
+      "gb": {
+        "name": "United Kingdom",
+        "weight_percent": 6.5,
+        "region": "Europe",
+        "confidence": "High",
+        "aliases": [
+          "uk",
+          "gbr"
+        ]
+      },
+      "br": {
+        "name": "Brazil",
+        "weight_percent": 5.0,
+        "region": "Latin_America",
+        "confidence": "Medium"
+      },
+      "de": {
+        "name": "Germany",
+        "weight_percent": 4.5,
+        "region": "Europe",
+        "confidence": "Medium"
+      },
+      "jp": {
+        "name": "Japan",
+        "weight_percent": 4.0,
+        "region": "Asia_Pacific",
+        "confidence": "Medium"
+      },
+      "fr": {
+        "name": "France",
+        "weight_percent": 3.5,
+        "region": "Europe",
+        "confidence": "Medium"
+      },
+      "ca": {
+        "name": "Canada",
+        "weight_percent": 3.5,
+        "region": "North_America",
+        "confidence": "Medium"
+      },
+      "mx": {
+        "name": "Mexico",
+        "weight_percent": 3.0,
+        "region": "Latin_America",
+        "confidence": "Medium"
+      },
+      "au": {
+        "name": "Australia",
+        "weight_percent": 2.5,
+        "region": "Oceania",
+        "confidence": "Medium"
+      },
+      "es": {
+        "name": "Spain",
+        "weight_percent": 2.0,
+        "region": "Europe",
+        "confidence": "Medium"
+      },
+      "it": {
+        "name": "Italy",
+        "weight_percent": 2.0,
+        "region": "Europe",
+        "confidence": "Medium"
+      },
+      "kr": {
+        "name": "South Korea",
+        "weight_percent": 1.8,
+        "region": "Asia_Pacific",
+        "confidence": "Medium"
+      },
+      "nl": {
+        "name": "Netherlands",
+        "weight_percent": 1.0,
+        "region": "Europe",
+        "confidence": "Medium"
+      },
+      "se": {
+        "name": "Sweden",
+        "weight_percent": 0.7,
+        "region": "Europe",
+        "confidence": "High"
+      },
+      "sg": {
+        "name": "Singapore",
+        "weight_percent": 0.5,
+        "region": "Asia_Pacific",
+        "confidence": "Medium"
+      },
+      "row": {
+        "name": "Rest of World",
+        "weight_percent": 2.0,
+        "region": "Mixed",
+        "confidence": "Low",
+        "note": "ROW is a country ALLOCATION (2%), NOT a synonym for 'total'"
+      }
+    },
+    "allocation_sum_validation": 100.0,
+    "regional_aggregates": {
+      "North_America": {
+        "weight_percent": 40.5,
+        "countries": [
+          "us",
+          "ca"
+        ],
+        "suffix": "na"
+      },
+      "Europe": {
+        "weight_percent": 20.2,
+        "countries": [
+          "gb",
+          "de",
+          "fr",
+          "es",
+          "it",
+          "nl",
+          "se"
+        ],
+        "suffix": "eu"
+      },
+      "Asia_Pacific": {
+        "weight_percent": 26.8,
+        "countries": [
+          "cn",
+          "in",
+          "jp",
+          "kr",
+          "sg"
+        ],
+        "suffix": "apac"
+      },
+      "Latin_America": {
+        "weight_percent": 8.0,
+        "countries": [
+          "br",
+          "mx"
+        ],
+        "suffix": "latam"
+      },
+      "Oceania_ROW": {
+        "weight_percent": 4.5,
+        "countries": [
+          "au",
+          "row"
+        ],
+        "suffix": "oceania"
+      }
+    },
+    "formula": {
+      "total_views": "V_total = ML_ensemble x scale_factor x S_i x T_g x period_weight",
+      "country_views": "V_country = V_total x (weight_percent / 100)"
+    },
+    "example_columns": [
+      "views_q1_2024_total",
+      "views_q1_2024_us",
+      "views_q1_2024_cn",
+      "views_q1_2024_in",
+      "views_q1_2024_gb",
+      "views_q1_2024_br",
+      "views_q1_2024_de",
+      "views_q1_2024_jp",
+      "views_q1_2024_fr",
+      "views_q1_2024_ca",
+      "views_q1_2024_mx",
+      "views_q1_2024_au",
+      "views_q1_2024_es",
+      "views_q1_2024_it",
+      "views_q1_2024_kr",
+      "views_q1_2024_nl",
+      "views_q1_2024_se",
+      "views_q1_2024_sg",
+      "views_q1_2024_row"
+    ]
+  },
+  "genre_conversion_table": {
+    "_description": "Genre-specific hours_per_view conversion factors from ALGO 65.2",
+    "_formula": "hours_viewed = views x hours_per_view",
+    "genres": {
+      "Drama": {
+        "avg_runtime_minutes": 52,
+        "hours_per_view": 0.867
+      },
+      "Comedy": {
+        "avg_runtime_minutes": 24,
+        "hours_per_view": 0.4
+      },
+      "Action": {
+        "avg_runtime_minutes": 48,
+        "hours_per_view": 0.8
+      },
+      "SciFi_Fantasy": {
+        "avg_runtime_minutes": 55,
+        "hours_per_view": 0.917
+      },
+      "Documentary": {
+        "avg_runtime_minutes": 42,
+        "hours_per_view": 0.7
+      },
+      "Reality": {
+        "avg_runtime_minutes": 44,
+        "hours_per_view": 0.733
+      },
+      "Kids_Family": {
+        "avg_runtime_minutes": 22,
+        "hours_per_view": 0.367
+      },
+      "Crime_Procedural": {
+        "avg_runtime_minutes": 46,
+        "hours_per_view": 0.767
+      },
+      "Romance": {
+        "avg_runtime_minutes": 38,
+        "hours_per_view": 0.633
+      },
+      "Thriller": {
+        "avg_runtime_minutes": 50,
+        "hours_per_view": 0.833
+      },
+      "Feature_Film": {
+        "avg_runtime_minutes": 110,
+        "hours_per_view": 1.833
+      },
+      "Animation_Adult": {
+        "avg_runtime_minutes": 26,
+        "hours_per_view": 0.433
+      }
+    }
+  },
+  "platform_elasticity_coefficients": {
+    "_description": "Platform elasticity (beta_p) for WVV calculation",
+    "_formula_context": "WVV = Views x Completion x beta_p x lambda_g^-1",
+    "platforms": {
+      "apple_tv_plus": 1.15,
+      "hbo_max": 1.12,
+      "netflix": 1.1,
+      "disney_plus": 1.08,
+      "amazon_prime": 1.05,
+      "hulu": 1.02,
+      "paramount_plus": 1.0,
+      "peacock": 0.98,
+      "default": 1.0
+    }
+  },
+  "context_adjustment_weights": {
+    "_description": "Regional context adjustment factors from ALGO 65.2",
+    "weather_impact": {
+      "us": 1.0,
+      "gb": 0.88,
+      "au": 1.0,
+      "default": 1.0
+    },
+    "event_interference": {
+      "us": 1.0,
+      "gb": 1.0,
+      "au": 0.85,
+      "default": 1.0
+    },
+    "economic_sentiment": {
+      "us": 0.97,
+      "gb": 0.97,
+      "au": 0.95,
+      "default": 0.97
+    }
+  },
+  "column_name_mapping": {
+    "fc_uid": "fc_uid",
+    "season_id": "fc_uid",
+    "imdb_id": "imdb_id",
+    "gb": "gb",
+    "gbr": "gb",
+    "GB": "gb",
+    "GBR": "gb",
+    "uk": "gb",
+    "UK": "gb",
+    "streaming": "streaming_platform",
+    "streaming TV": "streaming_platform",
+    "OVD": "streaming_platform",
+    "IPTV": "streaming_platform",
+    "brand": "streaming_platform",
+    "SVOD": "streaming_platform",
+    "TVOD": "streaming_platform",
+    "streaming services": "streaming_platform",
+    "providers": "streaming_platform",
+    "delivery": "streaming_platform",
+    "player": "streaming_platform",
+    "OTT": "streaming_platform",
+    "streamer": "streaming_platform",
+    "show_imdb_id": "imdb_id",
+    "series_imdb_id": "imdb_id",
+    "title": "title",
+    "show_title": "title",
+    "series_title": "title",
+    "original_title": "original_title",
+    "orig_title": "original_title",
+    "original_name": "original_title",
+    "title_type": "title_type",
+    "type": "title_type",
+    "content_type": "title_type",
+    "media_type": "title_type",
+    "season_number": "season_number",
+    "season_num": "season_number",
+    "max_seasons": "max_seasons",
+    "total_seasons": "max_seasons",
+    "number_of_seasons": "max_seasons",
+    "season_count": "max_seasons",
+    "num_seas": "max_seasons",
+    "seasons_made": "max_seasons",
+    "seasons_total": "max_seasons",
+    "all_seasons": "max_seasons",
+    "total_sum_seasons": "max_seasons",
+    "season_episodes": "season_episodes",
+    "episodes_in_season": "season_episodes",
+    "season_episode_count": "season_episodes",
+    "episodes_this_season": "season_episodes",
+    "total_episodes": "total_episodes",
+    "episodes_total": "total_episodes",
+    "number_of_episodes": "total_episodes",
+    "start_year": "start_year",
+    "year_start": "start_year",
+    "first_year": "start_year",
+    "release_date": "start_year",
+    "release_dates": "start_year",
+    "first_air_date": "start_year",
+    "end_year": "end_year",
+    "year_end": "end_year",
+    "last_year": "end_year",
+    "last_air_date": "end_year",
+    "runtime_minutes": "runtime_minutes",
+    "runtime": "runtime_minutes",
+    "duration_minutes": "runtime_minutes",
+    "genres": "genres",
+    "genre": "genres",
+    "is_adult": "is_adult",
+    "adult": "is_adult",
+    "adult_flag": "is_adult",
+    "imdb_score": "imdb_score",
+    "imdb_rating": "imdb_score",
+    "imdb_vote_count": "imdb_vote_count",
+    "imdb_votes": "imdb_vote_count",
+    "regions": "regions",
+    "region_list": "regions",
+    "cast_data": "cast_data",
+    "cast": "cast_data",
+    "cast_list": "cast_data",
+    "actors": "cast_data",
+    "talent": "cast_data",
+    "creators": "creators",
+    "creator": "creators",
+    "directors": "directors",
+    "director": "directors",
+    "writers": "writers",
+    "writer": "writers",
+    "imdb_url": "imdb_url",
+    "url_imdb": "imdb_url",
+    "us_certification": "age_certification",
+    "us_rating": "age_certification",
+    "content_ratings": "age_certification",
+    "popularity": "tmdb_popularity",
+    "poster_path": "poster",
+    "backdrop_path": "backdrop",
+    "streaming_platforms": "streaming_platform",
+    "us_streaming_platforms": "streaming_platform",
+    "watch_providers": "streaming_platform",
+    "canon_platform": "streaming_platform",
+    "streamers": "streaming_platform",
+    "platform": "streaming_platform",
+    "platforms": "streaming_platform",
+    "distribution": "streaming_platform",
+    "ott": "streaming_platform",
+    "ott_service": "streaming_platform",
+    "ott_services": "streaming_platform",
+    "over_the_top": "streaming_platform",
+    "over_the_top_service": "streaming_platform",
+    "streaming_service": "streaming_platform",
+    "streaming_services": "streaming_platform",
+    "video_on_demand": "streaming_platform",
+    "vod": "streaming_platform",
+    "svod": "streaming_platform",
+    "subscription_vod": "streaming_platform",
+    "tvod": "streaming_platform",
+    "transactional_vod": "streaming_platform",
+    "avod": "streaming_platform",
+    "ad_supported_vod": "streaming_platform",
+    "streaming_tv": "streaming_platform",
+    "streaming_television": "streaming_platform",
+    "connected_tv": "streaming_platform",
+    "ctv": "streaming_platform",
+    "online_video_distributor": "streaming_platform",
+    "ovd": "streaming_platform",
+    "iptv": "streaming_platform",
+    "internet_protocol_television": "streaming_platform",
+    "provider": "streaming_platform",
+    "brands": "streaming_platform",
+    "service": "streaming_platform",
+    "services": "streaming_platform",
+    "networks": "network",
+    "vote_average": "tmdb_score",
+    "vote_count": "tmdb_vote_count",
+    "rt_audience_score": "rotten_tomatoes_score",
+    "fp_rt_rating": "rotten_tomatoes_score",
+    "rt_score": "rotten_tomatoes_score",
+    "rt_audience": "rotten_tomatoes_score",
+    "studio_facility": "studio_facility",
+    "physical_studio": "studio_facility",
+    "facility": "studio_facility",
+    "production_company_primary": "production_company_primary",
+    "primary_production_company": "production_company_primary",
+    "prodco": "production_company_primary"
+  },
+  "title_type_value_mapping": {
+    "_description": "CANONICAL: Only 'film' and 'tv_show' are valid title_type values",
+    "_valid_values": [
+      "film",
+      "tv_show"
+    ],
+    "_updated": "2026-01-19",
+    "movie": "film",
+    "Movie": "film",
+    "MOVIE": "film",
+    "Film": "film",
+    "FILM": "film",
+    "feature_film": "film",
+    "film": "film",
+    "tv": "tv_show",
+    "TV": "tv_show",
+    "tv_show": "tv_show",
+    "tvshow": "tv_show",
+    "TV Show": "tv_show",
+    "tvseries": "tv_show",
+    "tvSeries": "tv_show",
+    "series": "tv_show",
+    "Series": "tv_show",
+    "serial": "tv_show",
+    "tv_season": "tv_show",
+    "tvMiniSeries": "tv_show",
+    "tvminiseries": "tv_show",
+    "tv_miniseries": "tv_show",
+    "miniseries": "tv_show",
+    "episode": "tv_show",
+    "short": "film",
+    "tv_movie": "film",
+    "tv_special": "tv_show",
+    "unknown": "tv_show"
+  },
+  "temporal_column_patterns": {
+    "_v22_fix": "FIXED: Removed 'global' from allocation_countries_18. 'total' is now separate.",
+    "total_views": {
+      "description": "Worldwide total views BEFORE country allocation",
+      "pattern": "views_{period}_{year}_total",
+      "deprecated_pattern": "views_{period}_{year}_global",
+      "dtype": "int64"
+    },
+    "quarterly_views": "views_{quarter}_{year}_{country}",
+    "quarterly_viewed_mins": "viewed_mins_{quarter}_{year}_{country}",
+    "quarterly_wvv": "wvv_{quarter}_{year}_{country}",
+    "half_yearly_views": "views_{half}_{year}_{country}",
+    "half_yearly_wvv": "wvv_{half}_{year}_{country}",
+    "quarters": [
+      "q1",
+      "q2",
+      "q3",
+      "q4"
+    ],
+    "half_years": [
+      "h1",
+      "h2"
+    ],
+    "years": [
+      2023,
+      2024,
+      2025,
+      2026
+    ],
+    "allocation_countries_22": [
+      "us",
+      "cn",
+      "in",
+      "gb",
+      "br",
+      "de",
+      "jp",
+      "fr",
+      "ca",
+      "mx",
+      "au",
+      "es",
+      "it",
+      "kr",
+      "nl",
+      "se",
+      "sg",
+      "hk",
+      "ie",
+      "ru",
+      "tr",
+      "row"
+    ],
+    "_countries_22_mapping": {
+      "us": "United States",
+      "cn": "China",
+      "in": "India",
+      "gb": "United Kingdom",
+      "br": "Brazil",
+      "de": "Germany",
+      "jp": "Japan",
+      "fr": "France",
+      "ca": "Canada",
+      "mx": "Mexico",
+      "au": "Australia",
+      "es": "Spain",
+      "it": "Italy",
+      "kr": "South Korea",
+      "nl": "Netherlands",
+      "se": "Sweden",
+      "sg": "Singapore",
+      "hk": "Hong Kong",
+      "ie": "Ireland",
+      "ru": "Russia",
+      "tr": "Turkey",
+      "row": "Rest of World"
+    },
+    "quarterly_seasonality_weights": {
+      "q1": 0.95,
+      "q2": 0.98,
+      "q3": 1.0,
+      "q4": 1.07
+    },
+    "half_yearly_seasonality_weights": {
+      "h1": 0.97,
+      "h2": 1.03
+    }
+  },
+  "accuracy_targets": {
+    "_source": "ALGO 65.2",
+    "quarterly_enterprise": {
+      "accuracy": "92%",
+      "mape": "~8%",
+      "signals_required": "SET 1-9 (all 56)"
+    },
+    "weekly_daily": {
+      "accuracy": "75%",
+      "mape": "~25%",
+      "signals_required": "SET 3 + partial others"
+    },
+    "algo_95.2_target": {
+      "accuracy": "90%",
+      "mape": "<10%"
+    }
+  },
+  "_country_allocation_ratios": {
+    "description": "Country allocation weight ratios - percentage of global views allocated to each country",
+    "added": "2026-01-19",
+    "version": "23.20",
+    "section": "Platform & Aggregates",
+    "columns": {
+      "ratio_us_to_global": {
+        "dtype": "float64",
+        "description": "US share of global views",
+        "range": "0.0-1.0"
+      },
+      "ratio_de_to_global": {
+        "dtype": "float64",
+        "description": "Germany share of global views",
+        "range": "0.0-1.0"
+      },
+      "ratio_in_to_global": {
+        "dtype": "float64",
+        "description": "India share of global views",
+        "range": "0.0-1.0"
+      },
+      "ratio_jp_to_global": {
+        "dtype": "float64",
+        "description": "Japan share of global views",
+        "range": "0.0-1.0"
+      },
+      "ratio_uk_to_global": {
+        "dtype": "float64",
+        "description": "UK share of global views",
+        "range": "0.0-1.0"
+      },
+      "ratio_fr_to_global": {
+        "dtype": "float64",
+        "description": "France share of global views",
+        "range": "0.0-1.0"
+      },
+      "ratio_it_to_global": {
+        "dtype": "float64",
+        "description": "Italy share of global views",
+        "range": "0.0-1.0"
+      },
+      "ratio_ca_to_global": {
+        "dtype": "float64",
+        "description": "Canada share of global views",
+        "range": "0.0-1.0"
+      },
+      "ratio_br_to_global": {
+        "dtype": "float64",
+        "description": "Brazil share of global views",
+        "range": "0.0-1.0"
+      },
+      "ratio_ru_to_global": {
+        "dtype": "float64",
+        "description": "Russia share of global views",
+        "range": "0.0-1.0"
+      }
+    },
+    "usage": "Used for country-specific view allocation from global totals"
+  },
+  "_deprecated_columns_v23_20": {
+    "description": "Columns deprecated and removed in V23.20",
+    "removed_date": "2026-01-19",
+    "reason": "These columns were experimental features that are no longer used in the ML pipeline. Data available in Components/ files.",
+    "columns_removed": [
+      "imdb_score_x_imdb_vote_count",
+      "imdb_score_x_runtime_minutes",
+      "imdb_score_x_start_year",
+      "imdb_vote_count_x_runtime_minutes",
+      "start_year_x_runtime_minutes",
+      "season_number_x_max_seasons",
+      "season_number_x_total_episodes",
+      "max_seasons_x_total_episodes",
+      "imdb_score_x_season_number",
+      "imdb_score_x_max_seasons",
+      "season_factor",
+      "season_allocator_applied",
+      "season_weight",
+      "studio_multiplier",
+      "talent_multiplier",
+      "genre_baseline",
+      "computed_views"
+    ],
+    "total_removed": 17,
+    "data_source_mapping": {
+      "studio_multiplier": "Components/Apply studio weighting.json (tiers, weight_lookup)",
+      "genre_baseline": [
+        "Components/cranberry genre decay table.json (genres)",
+        "Components/ABSTRACT_SIGNALS_ALL.json (genre_performance, _genre_weights_lookup)"
+      ],
+      "season_factor": [
+        "Components/FC_SEASON_NUMBER_ALLOCATOR_v1_1.json (_allocation_algorithm)",
+        "Components/ABSTRACT_SIGNALS_ALL.json (seasonal_patterns, _seasonal_multipliers)"
+      ],
+      "season_weight": [
+        "Components/FC_SEASON_NUMBER_ALLOCATOR_v1_1.json (_allocation_algorithm)",
+        "Components/ABSTRACT_SIGNALS_ALL.json (seasonal_patterns)"
+      ],
+      "season_allocator_applied": "Components/FC_SEASON_NUMBER_ALLOCATOR_v1_1.json (_output_thresholds)",
+      "talent_multiplier": "Components/ABSTRACT_SIGNALS_ALL.json (ad_market_creative_metadata_ta.talent_rankings)",
+      "computed_views": "Replaced by views_computed column (already in schema)",
+      "interaction_features": "Can be recomputed at runtime from base columns"
+    }
+  },
+  "total_columns": {
+    "core": 78,
+    "x_features": 20,
+    "y_ground_truth": 12,
+    "audit": 16,
+    "wvv": 7,
+    "total_views_columns": 32,
+    "quarterly_views_18_countries": 288,
+    "quarterly_wvv_18_countries": 288,
+    "half_yearly_views_18_countries": 144,
+    "half_yearly_wvv_18_countries": 144,
+    "estimated_total": 1029,
+    "note": "V22.00: Actual count depends on years covered and optional columns populated"
+  },
+  "_cranberry_naming_convention": {
+    "description": "All output files use Cranberry_[Descriptor]_V[version].parquet naming",
+    "pattern": "Cranberry_{descriptor}_V{major}.{minor}.parquet",
+    "output_files": {
+      "Cranberry_Titles": {
+        "description": "Main fact table with title metadata and country-level views",
+        "example": "Cranberry_Titles_V4.10.parquet",
+        "replaces": "Cranberry_V4.00_ALG0##.parquet"
+      },
+      "Cranberry_Platform_Views": {
+        "description": "Platform-level view allocation (sparse dimension table)",
+        "example": "Cranberry_Platform_Views_V4.10.parquet",
+        "new": true
+      },
+      "Cranberry_Fresh": {
+        "description": "New data collection before merge",
+        "example": "Cranberry_Fresh_20260112.parquet"
+      },
+      "Cranberry_Audit": {
+        "description": "Audit trail and validation reports",
+        "example": "Cranberry_Audit_V4.10.json"
+      }
+    },
+    "version_history": {
+      "V3.2": "Added premiere_date 100% coverage, TV season rule validation",
+      "V4.00": "First ALGO 95.2 run with 1350 trees",
+      "V4.10": "Star schema implementation with platform availability gate",
+      "V24.00": "ALGO 95.2 canon compliance, topology v10.00 alignment"
+    }
+  },
+  "_validation_rules": {
+    "rule_1": "fc_uid must match pattern tt#######_S## for TV seasons or tt####### for films",
+    "rule_2": "Country weights must sum to exactly 100.0%",
+    "rule_3": "UK must be stored as 'gb' (mapped from GB/GBR/UK on ingestion)",
+    "rule_4": "X-features are optional but must be within defined ranges when present",
+    "rule_5": "WVV = views x completion x beta_p x lambda_g^-1",
+    "rule_6": "schema_version field must be '24.00'",
+    "rule_7": "CRITICAL: Release validation MUST occur before view allocation",
+    "rule_8": "Titles with status in UNRELEASED_STATUSES must have views=0",
+    "rule_9": "Titles with premiere_date > today must have views=0",
+    "rule_10": "Titles with start_year > current_year must have views=0",
+    "rule_11": "STAR SCHEMA: Platform views ONLY in Cranberry_Platform_Views table (not columns)",
+    "rule_12": "AVAILABILITY GATE: Platform views only allocated where title IS available per streaming_lookup_*.json",
+    "rule_13": "CONSERVATION: SUM(platform_views) for country must equal country_views in Cranberry_Titles",
+    "rule_14": "FLIXPATROL: Only 3 columns allowed (flixpatrol_id, flixpatrol_points, flixpatrol_rank) - all other data merges to BFD columns",
+    "rule_15": "TOTAL-COUNTRY CONSERVATION: SUM(all 18 country view columns) must equal total view column for each period/year"
+  },
+  "_hardwired_paths": {
+    "description": "HARDWIRED DATA PATHS for ALGO 95.2 execution",
+    "input_database": {
+      "name": "Cranberry_V3.2_with_xfeatures.parquet",
+      "windows_path": "C:\\Users\\RoyT6\\Downloads\\Cranberry_V3.2_with_xfeatures.parquet",
+      "wsl_path": "/mnt/c/Users/RoyT6/Downloads/Cranberry_V3.2_with_xfeatures.parquet",
+      "rows": 768641,
+      "columns": 1123,
+      "x_features_included": true,
+      "note": "Phase 3 (X-Feature Creation) already completed in this file"
+    },
+    "training_data": {
+      "name": "Views Training Data",
+      "windows_path": "C:\\Users\\RoyT6\\Downloads\\Views Training Data\\",
+      "wsl_path": "/mnt/c/Users/RoyT6/Downloads/Views Training Data/"
+    },
+    "components": {
+      "name": "Components",
+      "windows_path": "C:\\Users\\RoyT6\\Downloads\\Components\\",
+      "wsl_path": "/mnt/c/Users/RoyT6/Downloads/Components/"
+    },
+    "abstract_data": {
+      "name": "Abstract Data",
+      "windows_path": "C:\\Users\\RoyT6\\Downloads\\Abstract Data\\",
+      "wsl_path": "/mnt/c/Users/RoyT6/Downloads/Abstract Data/"
+    },
+    "fresh_data": {
+      "name": "Fresh In!",
+      "windows_path": "C:\\Users\\RoyT6\\Downloads\\Fresh In!\\",
+      "wsl_path": "/mnt/c/Users/RoyT6/Downloads/Fresh In!/"
+    }
+  },
+  "_release_validation": {
+    "description": "ALGO 95.2 must validate release status BEFORE allocating views (Phase 5.5)",
+    "added": "2026-01-11",
+    "reason": "Reacher S4 bug - views allocated to announced but unreleased content",
+    "UNRELEASED_STATUSES": [
+      "Announced",
+      "In Production",
+      "Planned",
+      "Upcoming",
+      "Post Production",
+      "Pilot",
+      "In Development",
+      "Pre-Production",
+      "Filming",
+      "Script"
+    ],
+    "validation_layers": {
+      "layer_1_status": "PRIMARY - Check if status in UNRELEASED_STATUSES",
+      "layer_2_premiere_date": "SECONDARY - Check if premiere_date > today",
+      "layer_3_start_year": "FALLBACK - Check if start_year > current_year"
+    },
+    "data_quality_note": "As of 2026-01-12, premiere_date is 100% populated in Cranberry_V3.2_with_xfeatures.parquet. Use status as primary filter, premiere_date as secondary.",
+    "audit_fields": {
+      "release_validation_performed": "bool - must be true",
+      "unreleased_titles_blocked": "int - count of blocked titles",
+      "release_validation_timestamp": "str - ISO timestamp"
+    }
+  },
+  "_studio_vs_production_company_v80_19": {
+    "description": "CRITICAL DISTINCTION: Physical Studios vs Production Companies (v80.19)",
+    "added": "2026-01-15",
+    "reason": "Database had incorrect definitions mixing physical facilities with content creators",
+    "engine": "Studios/studio_vs_production_company.py",
+    "tv_studio_definition": {
+      "description": "Physical facility for video production (soundstages, equipment, post-production)",
+      "key_characteristics": [
+        "Owns physical assets (soundstages, backlots, equipment)",
+        "Provides infrastructure for production",
+        "Can be RENTED by production companies",
+        "Location-based business model"
+      ],
+      "examples": [
+        "Pinewood Studios",
+        "Trilith Studios",
+        "Cinecitt\u00e0",
+        "Warner Bros. Studios Burbank"
+      ],
+      "NOT_examples": [
+        "Warner Bros. (the company)",
+        "Netflix (the service)",
+        "Universal Pictures"
+      ]
+    },
+    "production_company_definition": {
+      "description": "Business entity that manages content creation from concept to delivery",
+      "key_characteristics": [
+        "Creates intellectual property (films, TV shows)",
+        "HIRES studios for physical production",
+        "Manages budgeting, talent, scheduling",
+        "Project-based business model"
+      ],
+      "examples": [
+        "Warner Bros. Pictures",
+        "Blumhouse",
+        "A24",
+        "Bad Robot"
+      ],
+      "NOT_examples": [
+        "Pinewood Studios",
+        "Trilith Studios (the facility)"
+      ]
+    },
+    "critical_distinction": {
+      "warner_bros_studios_burbank": "tv_studio (physical facility you can rent)",
+      "warner_bros_pictures": "production_company (content creator)",
+      "note": "Same parent company, DIFFERENT entity types!"
+    },
+    "column_mappings": {
+      "studio": {
+        "old_meaning": "Ambiguous - mixed studios and production companies",
+        "new_meaning": "DEPRECATED - use studio_facility or production_company_primary"
+      },
+      "studio_facility": {
+        "dtype": "str",
+        "description": "Physical studio facility name (if any)",
+        "examples": [
+          "Pinewood Studios",
+          "Trilith Studios",
+          null
+        ],
+        "new_in_v80_19": true
+      },
+      "studio_facility_type": {
+        "dtype": "str",
+        "description": "Type of physical studio",
+        "enum": [
+          "tv_studio",
+          "film_studio",
+          "mixed_studio",
+          "streamer_studio",
+          "post_production",
+          "sound_stage",
+          "unknown",
+          null
+        ],
+        "new_in_v80_19": true
+      },
+      "production_company_primary": {
+        "dtype": "str",
+        "description": "Primary production company for the content",
+        "examples": [
+          "Warner Bros. Pictures",
+          "Blumhouse",
+          "A24"
+        ],
+        "new_in_v80_19": true
+      },
+      "production_company_type_corrected": {
+        "dtype": "str",
+        "description": "Corrected type of production company",
+        "enum": [
+          "major",
+          "mini_major",
+          "independent",
+          "boutique",
+          "streamer",
+          "broadcaster",
+          "unknown"
+        ],
+        "new_in_v80_19": true
+      }
+    },
+    "validation_rules": {
+      "rule_1": "studio_facility should ONLY contain physical facility names",
+      "rule_2": "production_company_primary should ONLY contain content creator names",
+      "rule_3": "Use studio_vs_production_company.py classifier for ambiguous entities",
+      "rule_4": "Legacy 'studio' column preserved for backwards compatibility but DEPRECATED"
+    }
+  },
+  "_streaming_release_date_architecture": {
+    "description": "CANON: Streaming release date vs premiere date distinction (V25.00)",
+    "added": "2026-01-20",
+    "columns": {
+      "premiere_date": {
+        "meaning": "Original theatrical/broadcast premiere date",
+        "immutable": true,
+        "example": "1937-10-29 for Angel (1937 film)"
+      },
+      "start_year": {
+        "meaning": "Year content becomes available on streaming platform",
+        "example": "2026 for catalog additions"
+      },
+      "streaming_release_date": {
+        "meaning": "Exact date content becomes available on streaming",
+        "derivation": "If premiere_year == start_year: use premiere_date; else: start_year-01-01 (placeholder)",
+        "example": "2026-01-01 for old content streaming in 2026"
+      },
+      "is_catalog_addition": {
+        "meaning": "Boolean flag indicating old content added to streaming later",
+        "derivation": "True when premiere_date year < start_year",
+        "dtype": "bool"
+      }
+    },
+    "statistics": {
+      "total_records": 765860,
+      "catalog_additions": 40747,
+      "new_releases": 725113
+    }
+  },
+  "_canonical_column_taxonomy_v25": {
+    "description": "CANON: Official column taxonomy for BFD database per ViewerDBX Platform Engine & Topology v10.00",
+    "version": "25.00",
+    "total_columns_approx": 1711,
+    "column_groups": {
+      "identity_and_ids": {
+        "range": "1-6",
+        "count": 6,
+        "columns": [
+          "fc_uid",
+          "tmdb_id",
+          "imdb_id",
+          "thetvdb_id",
+          "trakt_id",
+          "flixpatrol_id"
+        ]
+      },
+      "core_metadata": {
+        "range": "7-70",
+        "count": 66,
+        "columns": [
+          "title",
+          "original_title",
+          "title_type",
+          "season_number",
+          "max_seasons",
+          "season_episodes",
+          "total_episodes",
+          "start_year",
+          "end_year",
+          "premiere_date",
+          "finale_date",
+          "runtime_minutes",
+          "genres",
+          "is_adult",
+          "status",
+          "original_language",
+          "country",
+          "regions",
+          "overview",
+          "tagline",
+          "age_certification",
+          "homepage",
+          "streaming_platform",
+          "streaming_platform_us",
+          "streaming_platform_uk",
+          "network",
+          "studio",
+          "production_country",
+          "studio_headquarters",
+          "studio_offices",
+          "studio_hits",
+          "production_companies",
+          "creators",
+          "directors",
+          "writers",
+          "producers",
+          "cast_data",
+          "budget",
+          "revenue",
+          "imdb_score",
+          "imdb_vote_count",
+          "tmdb_score",
+          "tmdb_vote_count",
+          "tmdb_popularity",
+          "rotten_tomatoes_score",
+          "metacritic_score",
+          "netflix_hours_viewed",
+          "netflix_views",
+          "nielsen_viewers_millions",
+          "flixpatrol_points",
+          "flixpatrol_rank",
+          "parrot_demand_expressions",
+          "source_api",
+          "source_apis_used",
+          "ingestion_timestamp",
+          "confidence_score",
+          "measurement_scope",
+          "poster",
+          "backdrop",
+          "trailer_url",
+          "videos",
+          "similar_content",
+          "keywords",
+          "imdb_url",
+          "streaming_release_date",
+          "is_catalog_addition"
+        ]
+      },
+      "views_by_half_year_country": {
+        "range": "72-245",
+        "count_approx": 174,
+        "pattern": "views_h{1|2}_{year}_{country}",
+        "years": [
+          "2023",
+          "2024",
+          "2025"
+        ],
+        "countries": "28 countries + total"
+      },
+      "views_by_quarter_country": {
+        "range": "246-651",
+        "count_approx": 406,
+        "pattern": "views_q{1-4}_{year}_{country}",
+        "years": [
+          "2023",
+          "2024",
+          "2025",
+          "2026"
+        ],
+        "countries": "28 countries + total"
+      },
+      "ml_lag_features": {
+        "range": "652-859",
+        "count_approx": 208,
+        "patterns": [
+          "{metric}_lag{7|14|28|56|91}",
+          "{metric}_roll{7|14|28}"
+        ]
+      },
+      "ml_bucket_features": {
+        "range": "860-1032",
+        "count_approx": 173,
+        "patterns": [
+          "{metric}_b{10|25|50|75|90}",
+          "{metric}_bucket"
+        ]
+      },
+      "interaction_features": {
+        "range": "1033-1080",
+        "count_approx": 48,
+        "patterns": [
+          "int_{feature1}_{feature2}",
+          "{metric}_sq",
+          "{metric}_log"
+        ]
+      },
+      "computed_weights_multipliers": {
+        "range": "1081-1082",
+        "count": 2,
+        "columns": [
+          "base_prediction",
+          "studio_weight"
+        ]
+      },
+      "extended_views_us_cn": {
+        "range": "1083-1122",
+        "count_approx": 40,
+        "pattern": "views_h{1|2}_{year}_{us|cn}, views_q{1-4}_{year}_{us|cn}"
+      },
+      "historical_views_2021_2022": {
+        "range": "1123-1350",
+        "count_approx": 228,
+        "pattern": "views_{q|h}{period}_{year}_{country}",
+        "countries": "18 countries"
+      },
+      "future_views_2026": {
+        "range": "1351-1426",
+        "count_approx": 76,
+        "pattern": "views_{q3|q4|h1|h2}_2026_{country}"
+      },
+      "abstract_signals": {
+        "range": "1427-1452",
+        "count_approx": 26,
+        "columns": [
+          "abs_social_buzz",
+          "abs_trend_velocity",
+          "abs_critical_score",
+          "abs_audience_score",
+          "abs_award_momentum",
+          "abs_seasonal_index",
+          "abs_search_volume",
+          "abs_twitter_mentions",
+          "abs_instagram_engagement",
+          "abs_news_aberration",
+          "abs_weather_impact",
+          "abs_holiday_weight",
+          "abs_sports_competition",
+          "abs_sub_growth_region",
+          "abs_decay_position",
+          "abs_franchise_value",
+          "abs_star_power",
+          "abs_budget_tier",
+          "abs_marketing_spend",
+          "abs_platform_reach",
+          "studio_weight_S_i",
+          "genre_decay_T_g",
+          "views_y_pred",
+          "views_pred_xgboost",
+          "views_pred_catboost",
+          "views_pred_lightgbm",
+          "views_pred_randomforest",
+          "release_validated"
+        ]
+      },
+      "country_specific_predictions": {
+        "range": "1455-1660",
+        "count_approx": 206,
+        "pattern": "views_y_pred_{country}, views_q{1-4}_{2019-2026}_{country}"
+      },
+      "platform_aggregates": {
+        "range": "1661-1700",
+        "count_approx": 40,
+        "columns": [
+          "streaming_platform_global",
+          "streaming_platform_row",
+          "views_y",
+          "views_monthly",
+          "views_quarterly",
+          "views_domestic",
+          "views_international",
+          "views_emea",
+          "views_latam",
+          "views_apac",
+          "completion_rate",
+          "repetition_index",
+          "engagement_velocity",
+          "attribution_confidence",
+          "data_origin",
+          "source_system",
+          "source_reference",
+          "last_updated",
+          "row_hash",
+          "content_hash",
+          "is_deleted",
+          "validation_status",
+          "audit_log",
+          "created_at",
+          "modified_by",
+          "schema_version",
+          "canon_compliance",
+          "vram_allocation",
+          "reserved_1",
+          "reserved_2",
+          "beta_p",
+          "lambda_g",
+          "lambda_g_inv",
+          "hours_per_view",
+          "binge_rate_index",
+          "rewatch_index",
+          "wvv",
+          "streaming_platform_usa",
+          "views_y_source",
+          "views_computed"
+        ]
+      },
+      "studio_classification": {
+        "range": "1701-1711",
+        "count": 11,
+        "columns": [
+          "studio_canonical",
+          "studio_country",
+          "parent_studio",
+          "studio_source",
+          "production_company_canonical",
+          "studio_movies_count",
+          "studio_domestic_box_office",
+          "studio_worldwide_box_office",
+          "studio_rank",
+          "is_revenue_customer",
+          "tmdb_votes"
+        ]
+      }
+    }
+  }
+}
+{
+  "metadata": {
+    "description": "Global Streaming Platforms Master Reference",
+    "source": "Global_Top_100_Streaming_Platforms.csv",
+    "created": "2025-11-29",
+    "total_platforms": 85,
+    "total_subscribers_m": 1558.9
+  },
+  "platforms": {
+    "netflix": {
+      "display_name": "Netflix",
+      "canonical_name": "netflix",
+      "rank": 1,
+      "subscribers_m": 301.6,
+      "primary_region": "global",
+      "original_region": "ROW (Global)",
+      "aliases": [
+        "netflix",
+        "nflx"
+      ],
+      "bfd_tracked": true
+    },
+    "amazon_prime_video": {
+      "display_name": "Amazon Prime Video",
+      "canonical_name": "amazon_prime_video",
+      "rank": 2,
+      "subscribers_m": 200.0,
+      "primary_region": "global",
+      "original_region": "ROW (Global)",
+      "aliases": [
+        "amazon_prime",
+        "prime_video",
+        "amazon",
+        "prime"
+      ],
+      "bfd_tracked": true
+    },
+    "disney_plus": {
+      "display_name": "Disney+",
+      "canonical_name": "disney_plus",
+      "rank": 3,
+      "subscribers_m": 127.8,
+      "primary_region": "global",
+      "original_region": "ROW (Global)",
+      "aliases": [
+        "disney_plus",
+        "disney+",
+        "disneyplus",
+        "d+"
+      ],
+      "bfd_tracked": true
+    },
+    "max_hbo": {
+      "display_name": "Max (HBO)",
+      "canonical_name": "max_hbo",
+      "rank": 4,
+      "subscribers_m": 125.7,
+      "primary_region": "usa",
+      "original_region": "USA",
+      "aliases": [
+        "max",
+        "hbo_max",
+        "hbomax",
+        "hbo"
+      ],
+      "bfd_tracked": true
+    },
+    "tencent_video": {
+      "display_name": "Tencent Video",
+      "canonical_name": "tencent_video",
+      "rank": 5,
+      "subscribers_m": 117.0,
+      "primary_region": "cn",
+      "original_region": "ROW (China)",
+      "aliases": [
+        "tencent_video"
+      ],
+      "bfd_tracked": false
+    },
+    "iqiyi": {
+      "display_name": "iQIYI",
+      "canonical_name": "iqiyi",
+      "rank": 6,
+      "subscribers_m": 101.1,
+      "primary_region": "cn",
+      "original_region": "ROW (China)",
+      "aliases": [
+        "iqiyi"
+      ],
+      "bfd_tracked": false
+    },
+    "paramount_plus": {
+      "display_name": "Paramount+",
+      "canonical_name": "paramount_plus",
+      "rank": 7,
+      "subscribers_m": 77.7,
+      "primary_region": "usa",
+      "original_region": "USA",
+      "aliases": [
+        "paramount_plus",
+        "paramount+",
+        "paramountplus",
+        "cbs"
+      ],
+      "bfd_tracked": true
+    },
+    "hulu": {
+      "display_name": "Hulu",
+      "canonical_name": "hulu",
+      "rank": 8,
+      "subscribers_m": 55.5,
+      "primary_region": "usa",
+      "original_region": "USA",
+      "aliases": [
+        "hulu"
+      ],
+      "bfd_tracked": true
+    },
+    "peacock": {
+      "display_name": "Peacock",
+      "canonical_name": "peacock",
+      "rank": 9,
+      "subscribers_m": 41.0,
+      "primary_region": "usa",
+      "original_region": "USA",
+      "aliases": [
+        "peacock",
+        "nbc"
+      ],
+      "bfd_tracked": true
+    },
+    "hotstar": {
+      "display_name": "Hotstar",
+      "canonical_name": "hotstar",
+      "rank": 10,
+      "subscribers_m": 35.9,
+      "primary_region": "in",
+      "original_region": "ROW (India)",
+      "aliases": [
+        "hotstar"
+      ],
+      "bfd_tracked": false
+    },
+    "sonyliv": {
+      "display_name": "SonyLiv",
+      "canonical_name": "sonyliv",
+      "rank": 11,
+      "subscribers_m": 33.3,
+      "primary_region": "in",
+      "original_region": "ROW (India)",
+      "aliases": [
+        "sonyliv"
+      ],
+      "bfd_tracked": false
+    },
+    "apple_tv_plus": {
+      "display_name": "Apple TV+",
+      "canonical_name": "apple_tv_plus",
+      "rank": 12,
+      "subscribers_m": 30.0,
+      "primary_region": "usa",
+      "original_region": "USA",
+      "aliases": [
+        "apple_tv_plus",
+        "apple_tv+",
+        "appletv",
+        "atv+"
+      ],
+      "bfd_tracked": true
+    },
+    "curiositystream": {
+      "display_name": "CuriosityStream",
+      "canonical_name": "curiositystream",
+      "rank": 13,
+      "subscribers_m": 25.0,
+      "primary_region": "usa",
+      "original_region": "USA",
+      "aliases": [
+        "curiositystream"
+      ],
+      "bfd_tracked": true
+    },
+    "espn_plus": {
+      "display_name": "ESPN+",
+      "canonical_name": "espn_plus",
+      "rank": 14,
+      "subscribers_m": 24.1,
+      "primary_region": "usa",
+      "original_region": "USA",
+      "aliases": [
+        "espn_plus",
+        "espn+",
+        "espn"
+      ],
+      "bfd_tracked": true
+    },
+    "dazn": {
+      "display_name": "DAZN",
+      "canonical_name": "dazn",
+      "rank": 15,
+      "subscribers_m": 20.0,
+      "primary_region": "gb",
+      "original_region": "UK",
+      "aliases": [
+        "dazn"
+      ],
+      "bfd_tracked": true
+    },
+    "starz": {
+      "display_name": "Starz",
+      "canonical_name": "starz",
+      "rank": 16,
+      "subscribers_m": 15.9,
+      "primary_region": "usa",
+      "original_region": "USA",
+      "aliases": [
+        "starz",
+        "starzplay"
+      ],
+      "bfd_tracked": true
+    },
+    "crunchyroll": {
+      "display_name": "Crunchyroll",
+      "canonical_name": "crunchyroll",
+      "rank": 17,
+      "subscribers_m": 15.0,
+      "primary_region": "usa",
+      "original_region": "USA",
+      "aliases": [
+        "crunchyroll",
+        "cr"
+      ],
+      "bfd_tracked": true
+    },
+    "mubi": {
+      "display_name": "MUBI",
+      "canonical_name": "mubi",
+      "rank": 18,
+      "subscribers_m": 12.0,
+      "primary_region": "gb",
+      "original_region": "UK",
+      "aliases": [
+        "mubi"
+      ],
+      "bfd_tracked": true
+    },
+    "viu": {
+      "display_name": "Viu",
+      "canonical_name": "viu",
+      "rank": 19,
+      "subscribers_m": 11.7,
+      "primary_region": "seasia",
+      "original_region": "ROW (Asia)",
+      "aliases": [
+        "viu"
+      ],
+      "bfd_tracked": false
+    },
+    "amc_plus": {
+      "display_name": "AMC+",
+      "canonical_name": "amc_plus",
+      "rank": 20,
+      "subscribers_m": 11.6,
+      "primary_region": "usa",
+      "original_region": "USA",
+      "aliases": [
+        "amc_plus",
+        "amc+",
+        "amc"
+      ],
+      "bfd_tracked": true
+    },
+    "jiocinema": {
+      "display_name": "JioCinema",
+      "canonical_name": "jiocinema",
+      "rank": 21,
+      "subscribers_m": 10.0,
+      "primary_region": "in",
+      "original_region": "ROW (India)",
+      "aliases": [
+        "jiocinema"
+      ],
+      "bfd_tracked": false
+    },
+    "kinopoisk": {
+      "display_name": "KinoPoisk",
+      "canonical_name": "kinopoisk",
+      "rank": 22,
+      "subscribers_m": 9.8,
+      "primary_region": "ru",
+      "original_region": "ROW (Russia)",
+      "aliases": [
+        "kinopoisk"
+      ],
+      "bfd_tracked": false
+    },
+    "globoplay": {
+      "display_name": "Globoplay",
+      "canonical_name": "globoplay",
+      "rank": 23,
+      "subscribers_m": 8.0,
+      "primary_region": "row",
+      "original_region": "ROW (Brazil)",
+      "aliases": [
+        "globoplay"
+      ],
+      "bfd_tracked": false
+    },
+    "vix": {
+      "display_name": "Vix",
+      "canonical_name": "vix",
+      "rank": 24,
+      "subscribers_m": 7.0,
+      "primary_region": "row",
+      "original_region": "ROW (LatAm)",
+      "aliases": [
+        "vix"
+      ],
+      "bfd_tracked": false
+    },
+    "discovery_plus": {
+      "display_name": "Discovery+",
+      "canonical_name": "discovery_plus",
+      "rank": 25,
+      "subscribers_m": 7.0,
+      "primary_region": "usa",
+      "original_region": "USA",
+      "aliases": [
+        "discovery_plus",
+        "discovery+",
+        "discovery"
+      ],
+      "bfd_tracked": true
+    },
+    "rtl_plus": {
+      "display_name": "RTL Plus",
+      "canonical_name": "rtl_plus",
+      "rank": 26,
+      "subscribers_m": 6.76,
+      "primary_region": "eu",
+      "original_region": "ROW (Germany)",
+      "aliases": [
+        "rtl_plus"
+      ],
+      "bfd_tracked": true
+    },
+    "zee5": {
+      "display_name": "Zee5",
+      "canonical_name": "zee5",
+      "rank": 27,
+      "subscribers_m": 6.5,
+      "primary_region": "in",
+      "original_region": "ROW (India)",
+      "aliases": [
+        "zee5"
+      ],
+      "bfd_tracked": false
+    },
+    "ivi_tv": {
+      "display_name": "ivi TV",
+      "canonical_name": "ivi_tv",
+      "rank": 28,
+      "subscribers_m": 5.3,
+      "primary_region": "ru",
+      "original_region": "ROW (Russia)",
+      "aliases": [
+        "ivi_tv"
+      ],
+      "bfd_tracked": false
+    },
+    "shahid": {
+      "display_name": "Shahid",
+      "canonical_name": "shahid",
+      "rank": 29,
+      "subscribers_m": 5.0,
+      "primary_region": "row",
+      "original_region": "ROW (MENA)",
+      "aliases": [
+        "shahid"
+      ],
+      "bfd_tracked": false
+    },
+    "eros_now": {
+      "display_name": "Eros Now",
+      "canonical_name": "eros_now",
+      "rank": 30,
+      "subscribers_m": 5.0,
+      "primary_region": "in",
+      "original_region": "ROW (India)",
+      "aliases": [
+        "eros_now"
+      ],
+      "bfd_tracked": false
+    },
+    "viaplay": {
+      "display_name": "Viaplay",
+      "canonical_name": "viaplay",
+      "rank": 31,
+      "subscribers_m": 4.65,
+      "primary_region": "eu",
+      "original_region": "ROW (Nordic)",
+      "aliases": [
+        "viaplay"
+      ],
+      "bfd_tracked": true
+    },
+    "tving": {
+      "display_name": "tving",
+      "canonical_name": "tving",
+      "rank": 32,
+      "subscribers_m": 4.2,
+      "primary_region": "kr",
+      "original_region": "ROW (South Korea)",
+      "aliases": [
+        "tving"
+      ],
+      "bfd_tracked": false
+    },
+    "vidio": {
+      "display_name": "Vidio",
+      "canonical_name": "vidio",
+      "rank": 33,
+      "subscribers_m": 4.1,
+      "primary_region": "seasia",
+      "original_region": "ROW (Indonesia)",
+      "aliases": [
+        "vidio"
+      ],
+      "bfd_tracked": false
+    },
+    "britbox": {
+      "display_name": "BritBox",
+      "canonical_name": "britbox",
+      "rank": 34,
+      "subscribers_m": 4.0,
+      "primary_region": "gb",
+      "original_region": "UK",
+      "aliases": [
+        "britbox",
+        "brit_box"
+      ],
+      "bfd_tracked": true
+    },
+    "altbalaji": {
+      "display_name": "ALTBalaji",
+      "canonical_name": "altbalaji",
+      "rank": 35,
+      "subscribers_m": 3.88,
+      "primary_region": "in",
+      "original_region": "ROW (India)",
+      "aliases": [
+        "altbalaji"
+      ],
+      "bfd_tracked": false
+    },
+    "crave": {
+      "display_name": "Crave",
+      "canonical_name": "crave",
+      "rank": 36,
+      "subscribers_m": 3.64,
+      "primary_region": "usa",
+      "original_region": "ROW (Canada)",
+      "aliases": [
+        "crave"
+      ],
+      "bfd_tracked": true
+    },
+    "movistar_plus": {
+      "display_name": "movistar+",
+      "canonical_name": "movistar_plus",
+      "rank": 37,
+      "subscribers_m": 3.52,
+      "primary_region": "eu",
+      "original_region": "ROW (Spain)",
+      "aliases": [
+        "movistar_plus"
+      ],
+      "bfd_tracked": true
+    },
+    "starzplay": {
+      "display_name": "StarzPlay",
+      "canonical_name": "starzplay",
+      "rank": 38,
+      "subscribers_m": 3.22,
+      "primary_region": "usa",
+      "original_region": "USA",
+      "aliases": [
+        "starzplay"
+      ],
+      "bfd_tracked": true
+    },
+    "coupang_play": {
+      "display_name": "Coupang Play",
+      "canonical_name": "coupang_play",
+      "rank": 39,
+      "subscribers_m": 3.11,
+      "primary_region": "kr",
+      "original_region": "ROW (South Korea)",
+      "aliases": [
+        "coupang_play"
+      ],
+      "bfd_tracked": false
+    },
+    "watchit": {
+      "display_name": "WatchIT",
+      "canonical_name": "watchit",
+      "rank": 40,
+      "subscribers_m": 3.0,
+      "primary_region": "row",
+      "original_region": "ROW (Egypt)",
+      "aliases": [
+        "watchit"
+      ],
+      "bfd_tracked": false
+    },
+    "docomo": {
+      "display_name": "Docomo",
+      "canonical_name": "docomo",
+      "rank": 41,
+      "subscribers_m": 3.0,
+      "primary_region": "jp",
+      "original_region": "ROW (Japan)",
+      "aliases": [
+        "docomo"
+      ],
+      "bfd_tracked": false
+    },
+    "hulu_japan": {
+      "display_name": "Hulu (Japan)",
+      "canonical_name": "hulu_japan",
+      "rank": 42,
+      "subscribers_m": 3.0,
+      "primary_region": "jp",
+      "original_region": "ROW (Japan)",
+      "aliases": [
+        "hulu_japan"
+      ],
+      "bfd_tracked": false
+    },
+    "wavve": {
+      "display_name": "Wavve",
+      "canonical_name": "wavve",
+      "rank": 43,
+      "subscribers_m": 3.0,
+      "primary_region": "kr",
+      "original_region": "ROW (South Korea)",
+      "aliases": [
+        "wavve"
+      ],
+      "bfd_tracked": false
+    },
+    "u_next": {
+      "display_name": "U-Next",
+      "canonical_name": "u_next",
+      "rank": 44,
+      "subscribers_m": 3.0,
+      "primary_region": "jp",
+      "original_region": "ROW (Japan)",
+      "aliases": [
+        "u_next"
+      ],
+      "bfd_tracked": false
+    },
+    "now_tv": {
+      "display_name": "NOW TV",
+      "canonical_name": "now_tv",
+      "rank": 45,
+      "subscribers_m": 3.0,
+      "primary_region": "gb",
+      "original_region": "UK",
+      "aliases": [
+        "now_tv",
+        "nowtv",
+        "now"
+      ],
+      "bfd_tracked": true
+    },
+    "ocs": {
+      "display_name": "OCS",
+      "canonical_name": "ocs",
+      "rank": 46,
+      "subscribers_m": 2.9,
+      "primary_region": "eu",
+      "original_region": "ROW (France)",
+      "aliases": [
+        "ocs"
+      ],
+      "bfd_tracked": true
+    },
+    "joyn": {
+      "display_name": "Joyn",
+      "canonical_name": "joyn",
+      "rank": 47,
+      "subscribers_m": 2.8,
+      "primary_region": "eu",
+      "original_region": "ROW (Germany)",
+      "aliases": [
+        "joyn"
+      ],
+      "bfd_tracked": true
+    },
+    "canal_plus": {
+      "display_name": "Canal Plus",
+      "canonical_name": "canal_plus",
+      "rank": 48,
+      "subscribers_m": 2.8,
+      "primary_region": "eu",
+      "original_region": "ROW (France)",
+      "aliases": [
+        "canal_plus"
+      ],
+      "bfd_tracked": true
+    },
+    "shudder": {
+      "display_name": "Shudder",
+      "canonical_name": "shudder",
+      "rank": 49,
+      "subscribers_m": 2.8,
+      "primary_region": "usa",
+      "original_region": "USA",
+      "aliases": [
+        "shudder"
+      ],
+      "bfd_tracked": true
+    },
+    "stan": {
+      "display_name": "Stan",
+      "canonical_name": "stan",
+      "rank": 50,
+      "subscribers_m": 2.6,
+      "primary_region": "aus",
+      "original_region": "ROW (Australia)",
+      "aliases": [
+        "stan"
+      ],
+      "bfd_tracked": true
+    },
+    "osn": {
+      "display_name": "OSN",
+      "canonical_name": "osn",
+      "rank": 51,
+      "subscribers_m": 2.5,
+      "primary_region": "row",
+      "original_region": "ROW (MENA)",
+      "aliases": [
+        "osn"
+      ],
+      "bfd_tracked": false
+    },
+    "timvision": {
+      "display_name": "TIMvision",
+      "canonical_name": "timvision",
+      "rank": 52,
+      "subscribers_m": 2.39,
+      "primary_region": "eu",
+      "original_region": "ROW (Italy)",
+      "aliases": [
+        "timvision"
+      ],
+      "bfd_tracked": true
+    },
+    "showmax": {
+      "display_name": "Showmax",
+      "canonical_name": "showmax",
+      "rank": 53,
+      "subscribers_m": 2.1,
+      "primary_region": "row",
+      "original_region": "ROW (Africa)",
+      "aliases": [
+        "showmax"
+      ],
+      "bfd_tracked": false
+    },
+    "sling_tv": {
+      "display_name": "Sling TV",
+      "canonical_name": "sling_tv",
+      "rank": 54,
+      "subscribers_m": 2.09,
+      "primary_region": "usa",
+      "original_region": "USA",
+      "aliases": [
+        "sling_tv"
+      ],
+      "bfd_tracked": true
+    },
+    "fubotv": {
+      "display_name": "FuboTV",
+      "canonical_name": "fubotv",
+      "rank": 55,
+      "subscribers_m": 2.04,
+      "primary_region": "usa",
+      "original_region": "USA",
+      "aliases": [
+        "fubotv"
+      ],
+      "bfd_tracked": true
+    },
+    "trueid": {
+      "display_name": "TrueID",
+      "canonical_name": "trueid",
+      "rank": 56,
+      "subscribers_m": 2.0,
+      "primary_region": "seasia",
+      "original_region": "ROW (Thailand)",
+      "aliases": [
+        "trueid"
+      ],
+      "bfd_tracked": false
+    },
+    "skyshowtime": {
+      "display_name": "SkyShowtime",
+      "canonical_name": "skyshowtime",
+      "rank": 57,
+      "subscribers_m": 2.0,
+      "primary_region": "gb",
+      "original_region": "UK",
+      "aliases": [
+        "skyshowtime"
+      ],
+      "bfd_tracked": true
+    },
+    "tv_plus": {
+      "display_name": "TV+",
+      "canonical_name": "tv_plus",
+      "rank": 58,
+      "subscribers_m": 1.66,
+      "primary_region": "row",
+      "original_region": "ROW (Turkey)",
+      "aliases": [
+        "tv_plus"
+      ],
+      "bfd_tracked": false
+    },
+    "mediaset": {
+      "display_name": "Mediaset",
+      "canonical_name": "mediaset",
+      "rank": 59,
+      "subscribers_m": 1.64,
+      "primary_region": "eu",
+      "original_region": "ROW (Italy)",
+      "aliases": [
+        "mediaset"
+      ],
+      "bfd_tracked": true
+    },
+    "blutv": {
+      "display_name": "BluTV",
+      "canonical_name": "blutv",
+      "rank": 60,
+      "subscribers_m": 1.6,
+      "primary_region": "row",
+      "original_region": "ROW (Turkey)",
+      "aliases": [
+        "blutv"
+      ],
+      "bfd_tracked": false
+    },
+    "videoland": {
+      "display_name": "Videoland",
+      "canonical_name": "videoland",
+      "rank": 61,
+      "subscribers_m": 1.6,
+      "primary_region": "eu",
+      "original_region": "ROW (Netherlands)",
+      "aliases": [
+        "videoland"
+      ],
+      "bfd_tracked": true
+    },
+    "binge": {
+      "display_name": "Binge",
+      "canonical_name": "binge",
+      "rank": 62,
+      "subscribers_m": 1.55,
+      "primary_region": "aus",
+      "original_region": "ROW (Australia)",
+      "aliases": [
+        "binge"
+      ],
+      "bfd_tracked": true
+    },
+    "kayo_sports": {
+      "display_name": "Kayo Sports",
+      "canonical_name": "kayo_sports",
+      "rank": 63,
+      "subscribers_m": 1.5,
+      "primary_region": "aus",
+      "original_region": "ROW (Australia)",
+      "aliases": [
+        "kayo_sports"
+      ],
+      "bfd_tracked": true
+    },
+    "polsat": {
+      "display_name": "Polsat",
+      "canonical_name": "polsat",
+      "rank": 64,
+      "subscribers_m": 1.4,
+      "primary_region": "eu",
+      "original_region": "ROW (Poland)",
+      "aliases": [
+        "polsat"
+      ],
+      "bfd_tracked": true
+    },
+    "oneplay": {
+      "display_name": "Oneplay",
+      "canonical_name": "oneplay",
+      "rank": 65,
+      "subscribers_m": 1.4,
+      "primary_region": "row",
+      "original_region": "ROW (Mexico)",
+      "aliases": [
+        "oneplay"
+      ],
+      "bfd_tracked": false
+    },
+    "tivubu": {
+      "display_name": "Tivubu",
+      "canonical_name": "tivubu",
+      "rank": 66,
+      "subscribers_m": 1.15,
+      "primary_region": "row",
+      "original_region": "ROW (Turkey)",
+      "aliases": [
+        "tivubu"
+      ],
+      "bfd_tracked": false
+    },
+    "exxen": {
+      "display_name": "Exxen",
+      "canonical_name": "exxen",
+      "rank": 67,
+      "subscribers_m": 1.1,
+      "primary_region": "row",
+      "original_region": "ROW (Turkey)",
+      "aliases": [
+        "exxen"
+      ],
+      "bfd_tracked": false
+    },
+    "claro_video": {
+      "display_name": "Claro Video",
+      "canonical_name": "claro_video",
+      "rank": 68,
+      "subscribers_m": 1.0,
+      "primary_region": "row",
+      "original_region": "ROW (LatAm)",
+      "aliases": [
+        "claro_video"
+      ],
+      "bfd_tracked": false
+    },
+    "itv": {
+      "display_name": "ITV",
+      "canonical_name": "itv",
+      "rank": 69,
+      "subscribers_m": 1.0,
+      "primary_region": "gb",
+      "original_region": "UK",
+      "aliases": [
+        "itv"
+      ],
+      "bfd_tracked": true
+    },
+    "player": {
+      "display_name": "Player",
+      "canonical_name": "player",
+      "rank": 70,
+      "subscribers_m": 1.0,
+      "primary_region": "eu",
+      "original_region": "ROW (Poland)",
+      "aliases": [
+        "player"
+      ],
+      "bfd_tracked": true
+    },
+    "tv_2_denmark": {
+      "display_name": "TV 2 (Denmark)",
+      "canonical_name": "tv_2_denmark",
+      "rank": 71,
+      "subscribers_m": 0.987,
+      "primary_region": "eu",
+      "original_region": "ROW (Denmark)",
+      "aliases": [
+        "tv_2_denmark"
+      ],
+      "bfd_tracked": true
+    },
+    "tv4_sweden": {
+      "display_name": "TV4 (Sweden)",
+      "canonical_name": "tv4_sweden",
+      "rank": 72,
+      "subscribers_m": 0.887,
+      "primary_region": "eu",
+      "original_region": "ROW (Sweden)",
+      "aliases": [
+        "tv4_sweden"
+      ],
+      "bfd_tracked": true
+    },
+    "wow_germany": {
+      "display_name": "WOW (Germany)",
+      "canonical_name": "wow_germany",
+      "rank": 73,
+      "subscribers_m": 0.8,
+      "primary_region": "eu",
+      "original_region": "ROW (Germany)",
+      "aliases": [
+        "wow_germany"
+      ],
+      "bfd_tracked": true
+    },
+    "cda_poland": {
+      "display_name": "CDA (Poland)",
+      "canonical_name": "cda_poland",
+      "rank": 74,
+      "subscribers_m": 0.655,
+      "primary_region": "eu",
+      "original_region": "ROW (Poland)",
+      "aliases": [
+        "cda_poland"
+      ],
+      "bfd_tracked": true
+    },
+    "megogo_ukraine": {
+      "display_name": "Megogo (Ukraine)",
+      "canonical_name": "megogo_ukraine",
+      "rank": 75,
+      "subscribers_m": 0.638,
+      "primary_region": "eu",
+      "original_region": "ROW (Ukraine)",
+      "aliases": [
+        "megogo_ukraine"
+      ],
+      "bfd_tracked": true
+    },
+    "atresmedia_spain": {
+      "display_name": "Atresmedia (Spain)",
+      "canonical_name": "atresmedia_spain",
+      "rank": 76,
+      "subscribers_m": 0.593,
+      "primary_region": "eu",
+      "original_region": "ROW (Spain)",
+      "aliases": [
+        "atresmedia_spain"
+      ],
+      "bfd_tracked": true
+    },
+    "voyo_czech/slovakia": {
+      "display_name": "Voyo (Czech/Slovakia)",
+      "canonical_name": "voyo_czech/slovakia",
+      "rank": 77,
+      "subscribers_m": 0.58,
+      "primary_region": "eu",
+      "original_region": "ROW (CEE)",
+      "aliases": [
+        "voyo_czech/slovakia"
+      ],
+      "bfd_tracked": true
+    },
+    "tv2_norge": {
+      "display_name": "TV2 Norge",
+      "canonical_name": "tv2_norge",
+      "rank": 78,
+      "subscribers_m": 0.5,
+      "primary_region": "eu",
+      "original_region": "ROW (Norway)",
+      "aliases": [
+        "tv2_norge"
+      ],
+      "bfd_tracked": true
+    },
+    "go3_baltics": {
+      "display_name": "GO3 (Baltics)",
+      "canonical_name": "go3_baltics",
+      "rank": 79,
+      "subscribers_m": 0.5,
+      "primary_region": "eu",
+      "original_region": "ROW (Baltic States)",
+      "aliases": [
+        "go3_baltics"
+      ],
+      "bfd_tracked": true
+    },
+    "kyivstar_ukraine": {
+      "display_name": "Kyivstar (Ukraine)",
+      "canonical_name": "kyivstar_ukraine",
+      "rank": 80,
+      "subscribers_m": 0.48,
+      "primary_region": "eu",
+      "original_region": "ROW (Ukraine)",
+      "aliases": [
+        "kyivstar_ukraine"
+      ],
+      "bfd_tracked": true
+    },
+    "streamz_belgium": {
+      "display_name": "Streamz (Belgium)",
+      "canonical_name": "streamz_belgium",
+      "rank": 81,
+      "subscribers_m": 0.365,
+      "primary_region": "eu",
+      "original_region": "ROW (Belgium)",
+      "aliases": [
+        "streamz_belgium"
+      ],
+      "bfd_tracked": true
+    },
+    "bein_middle_east": {
+      "display_name": "Bein (Middle East)",
+      "canonical_name": "bein_middle_east",
+      "rank": 82,
+      "subscribers_m": 0.329,
+      "primary_region": "row",
+      "original_region": "ROW (MENA)",
+      "aliases": [
+        "bein_middle_east"
+      ],
+      "bfd_tracked": false
+    },
+    "iprima_czech_republic": {
+      "display_name": "iPrima (Czech Republic)",
+      "canonical_name": "iprima_czech_republic",
+      "rank": 83,
+      "subscribers_m": 0.25,
+      "primary_region": "eu",
+      "original_region": "ROW (Czech Republic)",
+      "aliases": [
+        "iprima_czech_republic"
+      ],
+      "bfd_tracked": true
+    },
+    "foxtel_australia": {
+      "display_name": "Foxtel (Australia)",
+      "canonical_name": "foxtel_australia",
+      "rank": 84,
+      "subscribers_m": 0.131,
+      "primary_region": "aus",
+      "original_region": "ROW (Australia)",
+      "aliases": [
+        "foxtel_australia"
+      ],
+      "bfd_tracked": true
+    },
+    "iroko_nigeria": {
+      "display_name": "iROKO (Nigeria)",
+      "canonical_name": "iroko_nigeria",
+      "rank": 85,
+      "subscribers_m": 0.036,
+      "primary_region": "row",
+      "original_region": "ROW (Nigeria)",
+      "aliases": [
+        "iroko_nigeria"
+      ],
+      "bfd_tracked": false
+    }
+  },
+  "canonical_lookup": {
+    "netflix": "netflix",
+    "nflx": "netflix",
+    "amazon_prime": "amazon_prime_video",
+    "prime_video": "amazon_prime_video",
+    "amazon": "amazon_prime_video",
+    "prime": "amazon_prime_video",
+    "amazon prime video": "amazon_prime_video",
+    "disney_plus": "disney_plus",
+    "disney+": "disney_plus",
+    "disneyplus": "disney_plus",
+    "d+": "disney_plus",
+    "max": "max_hbo",
+    "hbo_max": "max_hbo",
+    "hbomax": "max_hbo",
+    "hbo": "max_hbo",
+    "max (hbo)": "max_hbo",
+    "tencent_video": "tencent_video",
+    "tencent video": "tencent_video",
+    "iqiyi": "iqiyi",
+    "paramount_plus": "paramount_plus",
+    "paramount+": "paramount_plus",
+    "paramountplus": "paramount_plus",
+    "cbs": "paramount_plus",
+    "hulu": "hulu",
+    "peacock": "peacock",
+    "nbc": "peacock",
+    "hotstar": "hotstar",
+    "sonyliv": "sonyliv",
+    "apple_tv_plus": "apple_tv_plus",
+    "apple_tv+": "apple_tv_plus",
+    "appletv": "apple_tv_plus",
+    "atv+": "apple_tv_plus",
+    "apple tv+": "apple_tv_plus",
+    "curiositystream": "curiositystream",
+    "espn_plus": "espn_plus",
+    "espn+": "espn_plus",
+    "espn": "espn_plus",
+    "dazn": "dazn",
+    "starz": "starz",
+    "starzplay": "starzplay",
+    "crunchyroll": "crunchyroll",
+    "cr": "crunchyroll",
+    "mubi": "mubi",
+    "viu": "viu",
+    "amc_plus": "amc_plus",
+    "amc+": "amc_plus",
+    "amc": "amc_plus",
+    "jiocinema": "jiocinema",
+    "kinopoisk": "kinopoisk",
+    "globoplay": "globoplay",
+    "vix": "vix",
+    "discovery_plus": "discovery_plus",
+    "discovery+": "discovery_plus",
+    "discovery": "discovery_plus",
+    "rtl_plus": "rtl_plus",
+    "rtl plus": "rtl_plus",
+    "zee5": "zee5",
+    "ivi_tv": "ivi_tv",
+    "ivi tv": "ivi_tv",
+    "shahid": "shahid",
+    "eros_now": "eros_now",
+    "eros now": "eros_now",
+    "viaplay": "viaplay",
+    "tving": "tving",
+    "vidio": "vidio",
+    "britbox": "britbox",
+    "brit_box": "britbox",
+    "altbalaji": "altbalaji",
+    "crave": "crave",
+    "movistar_plus": "movistar_plus",
+    "movistar+": "movistar_plus",
+    "coupang_play": "coupang_play",
+    "coupang play": "coupang_play",
+    "watchit": "watchit",
+    "docomo": "docomo",
+    "hulu_japan": "hulu_japan",
+    "hulu (japan)": "hulu_japan",
+    "wavve": "wavve",
+    "u_next": "u_next",
+    "u-next": "u_next",
+    "now_tv": "now_tv",
+    "nowtv": "now_tv",
+    "now": "now_tv",
+    "now tv": "now_tv",
+    "ocs": "ocs",
+    "joyn": "joyn",
+    "canal_plus": "canal_plus",
+    "canal plus": "canal_plus",
+    "shudder": "shudder",
+    "stan": "stan",
+    "osn": "osn",
+    "timvision": "timvision",
+    "showmax": "showmax",
+    "sling_tv": "sling_tv",
+    "sling tv": "sling_tv",
+    "fubotv": "fubotv",
+    "trueid": "trueid",
+    "skyshowtime": "skyshowtime",
+    "tv_plus": "tv_plus",
+    "tv+": "tv_plus",
+    "mediaset": "mediaset",
+    "blutv": "blutv",
+    "videoland": "videoland",
+    "binge": "binge",
+    "kayo_sports": "kayo_sports",
+    "kayo sports": "kayo_sports",
+    "polsat": "polsat",
+    "oneplay": "oneplay",
+    "tivubu": "tivubu",
+    "exxen": "exxen",
+    "claro_video": "claro_video",
+    "claro video": "claro_video",
+    "itv": "itv",
+    "player": "player",
+    "tv_2_denmark": "tv_2_denmark",
+    "tv 2 (denmark)": "tv_2_denmark",
+    "tv4_sweden": "tv4_sweden",
+    "tv4 (sweden)": "tv4_sweden",
+    "wow_germany": "wow_germany",
+    "wow (germany)": "wow_germany",
+    "cda_poland": "cda_poland",
+    "cda (poland)": "cda_poland",
+    "megogo_ukraine": "megogo_ukraine",
+    "megogo (ukraine)": "megogo_ukraine",
+    "atresmedia_spain": "atresmedia_spain",
+    "atresmedia (spain)": "atresmedia_spain",
+    "voyo_czech/slovakia": "voyo_czech/slovakia",
+    "voyo (czech/slovakia)": "voyo_czech/slovakia",
+    "tv2_norge": "tv2_norge",
+    "tv2 norge": "tv2_norge",
+    "go3_baltics": "go3_baltics",
+    "go3 (baltics)": "go3_baltics",
+    "kyivstar_ukraine": "kyivstar_ukraine",
+    "kyivstar (ukraine)": "kyivstar_ukraine",
+    "streamz_belgium": "streamz_belgium",
+    "streamz (belgium)": "streamz_belgium",
+    "bein_middle_east": "bein_middle_east",
+    "bein (middle east)": "bein_middle_east",
+    "iprima_czech_republic": "iprima_czech_republic",
+    "iprima (czech republic)": "iprima_czech_republic",
+    "foxtel_australia": "foxtel_australia",
+    "foxtel (australia)": "foxtel_australia",
+    "iroko_nigeria": "iroko_nigeria",
+    "iroko (nigeria)": "iroko_nigeria"
+  },
+  "bfd_tracked": [
+    "netflix",
+    "amazon_prime_video",
+    "disney_plus",
+    "max_hbo",
+    "paramount_plus",
+    "hulu",
+    "peacock",
+    "apple_tv_plus",
+    "curiositystream",
+    "espn_plus",
+    "dazn",
+    "starz",
+    "crunchyroll",
+    "mubi",
+    "amc_plus",
+    "discovery_plus",
+    "rtl_plus",
+    "viaplay",
+    "britbox",
+    "crave",
+    "movistar_plus",
+    "starzplay",
+    "now_tv",
+    "ocs",
+    "joyn",
+    "canal_plus",
+    "shudder",
+    "stan",
+    "timvision",
+    "sling_tv",
+    "fubotv",
+    "skyshowtime",
+    "mediaset",
+    "videoland",
+    "binge",
+    "kayo_sports",
+    "polsat",
+    "itv",
+    "player",
+    "tv_2_denmark",
+    "tv4_sweden",
+    "wow_germany",
+    "cda_poland",
+    "megogo_ukraine",
+    "atresmedia_spain",
+    "voyo_czech/slovakia",
+    "tv2_norge",
+    "go3_baltics",
+    "kyivstar_ukraine",
+    "streamz_belgium",
+    "iprima_czech_republic",
+    "foxtel_australia"
+  ]
+}

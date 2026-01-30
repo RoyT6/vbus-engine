@@ -1,0 +1,307 @@
+{
+  "system_definition": {
+    "name": "ViewerDBX Bus System",
+    "acronym": "VBUS",
+    "version": "1.0.0",
+    "algo_version": "95.4",
+    "core_architecture": "ALGO 95.4 Bus-Centric Topology",
+    "design_philosophy": "Hardware-mimicry for software orchestration (High-Bandwidth, Deterministic, Audited, No-Fallbacks)."
+  },
+  "compute_hierarchy": {
+    "cpu_control": {
+      "designation": "ALGO 95.4",
+      "role": "Central Processing Unit",
+      "responsibilities": [
+        "Pipeline Execution",
+        "Temporal Validity Enforcement",
+        "GPU Proof-of-Work Ownership",
+        "Rule Enforcement (V1-V4)",
+        "Cache Management"
+      ],
+      "constraints": "Cannot bypass the bus; no direct syscalls; no fallbacks."
+    },
+    "gpu_fabric": {
+      "designation": "Stochastic Compute Layer",
+      "requirement": "GPU Mandatory",
+      "engines": [
+        "XGBoost (1350 trees, gpu_hist)",
+        "CatBoost (1350 trees, GPU)",
+        "cuML Random Forest (1350 trees)"
+      ],
+      "interconnect": "High-Speed Bus Link (NVLink analogy)"
+    }
+  },
+  "cache_hierarchy": {
+    "description": "Three-tier hierarchical cache with automatic promotion/demotion",
+    "tiers": {
+      "L1_HOT": {
+        "size": 64,
+        "description": "Fastest - in-memory, most accessed data",
+        "promotion_threshold": "5+ accesses from L2",
+        "eviction_policy": "LRU"
+      },
+      "L2_WARM": {
+        "size": 256,
+        "description": "Fast - in-memory, recently accessed",
+        "promotion_threshold": "5+ accesses from L3",
+        "demotion_trigger": "No access for 10+ minutes"
+      },
+      "L3_COLD": {
+        "size": 1024,
+        "description": "Slow - disk-backed, infrequently accessed",
+        "demotion_trigger": "No access for 30+ minutes"
+      }
+    },
+    "metrics": {
+      "track_hit_rate": true,
+      "track_promotions": true,
+      "track_demotions": true,
+      "track_access_patterns": true
+    }
+  },
+  "pipeline_phases": {
+    "description": "8-phase execution pipeline",
+    "phases": {
+      "1_GPU_INIT": {
+        "name": "GPU Initialization",
+        "action": "Allocate GPU Memory",
+        "required": true
+      },
+      "2_DATA_LOADING": {
+        "name": "Data Loading",
+        "action": "Fetch Training Data via VBUS",
+        "required": true
+      },
+      "3_FEATURE_ENGINEERING": {
+        "name": "Feature Engineering",
+        "action": "Extract & Transform Features",
+        "required": true
+      },
+      "4_MODEL_TRAINING": {
+        "name": "Model Training",
+        "action": "Train 1350 Trees x 3 Models",
+        "required": true
+      },
+      "5_PREDICTION": {
+        "name": "Prediction & Validation",
+        "action": "Evaluate Outputs",
+        "required": true
+      },
+      "6_OUTPUT_GENERATION": {
+        "name": "Output Generation",
+        "action": "Store Results via VBUS",
+        "required": true
+      },
+      "7_AUDIT_LOGGING": {
+        "name": "Audit Logging",
+        "action": "Log All Actions to AUDIT_LOGS",
+        "required": true
+      },
+      "8_REVIEW_DEPLOY": {
+        "name": "Review & Deploy",
+        "action": "Final Verification",
+        "required": true
+      }
+    }
+  },
+  "failure_modes": {
+    "description": "Four failure modes that trigger immediate process termination",
+    "modes": {
+      "DATA_BREAKDOWN": {
+        "trigger": "Corrupt or Missing Data",
+        "action": "PROCESS TERMINATED",
+        "log_to": "AUDIT_LOGS"
+      },
+      "VALIDATION_BREACH": {
+        "trigger": "Temporal Rule Violated",
+        "action": "PROCESS TERMINATED",
+        "log_to": "AUDIT_LOGS"
+      },
+      "COMPUTE_HALT": {
+        "trigger": "GPU Overflow or Fault",
+        "action": "PROCESS TERMINATED",
+        "log_to": "AUDIT_LOGS"
+      },
+      "SECURITY_FAILURE": {
+        "trigger": "Audit Policy Triggered",
+        "action": "PROCESS TERMINATED",
+        "log_to": "AUDIT_LOGS"
+      }
+    }
+  },
+  "run_modes": {
+    "FULL_BUILD": {
+      "description": "All 800k titles - initial database build",
+      "use_case": "First run or major schema change"
+    },
+    "INCREMENTAL": {
+      "description": "New arrivals only",
+      "use_case": "Daily updates after initial build"
+    },
+    "EQUATION_UPDATE": {
+      "description": "Re-run equations with same data",
+      "use_case": "When R/G/Q/A multipliers change"
+    },
+    "VALIDATION_ONLY": {
+      "description": "Validate existing data without changes",
+      "use_case": "Health checks"
+    }
+  },
+  "bus_specification": {
+    "name": "ViewerDBX System Bus",
+    "attributes": [
+      "High-Bandwidth",
+      "Deterministic",
+      "Audited",
+      "Memory-Mapped",
+      "No-Fallbacks"
+    ],
+    "function": "Single source of truth; signal passing; cryptographic audit chaining.",
+    "strict_mode": true
+  },
+  "memory_map": {
+    "address_space_0x1_data_memory": {
+      "type": "VRAM-Like (Read/Write)",
+      "description": "High-throughput feature storage",
+      "banks": {
+        "bank_0": "Views Training Data",
+        "bank_1": "Abstract Data",
+        "cache_l1": "Daily Top 10s (Low Latency)",
+        "cache_l2": "Fresh In! (Volatile)",
+        "bank_3": "Studios",
+        "bank_4": "Talent"
+      }
+    },
+    "address_space_0x2_compute_extensions": {
+      "type": "Coprocessor / Extensions",
+      "modules": [
+        "ALGO Engine",
+        "GPU Enablement (Hardware Abstraction)",
+        "MAPIE (Uncertainty Quantification)"
+      ]
+    },
+    "address_space_0x3_orchestration": {
+      "type": "Control Logic",
+      "modules": [
+        "Orchestrator",
+        "SCHIG",
+        "Components",
+        "Schema"
+      ]
+    },
+    "address_space_0x4_io_edge": {
+      "type": "External Interface / Southbridge",
+      "interfaces": [
+        "Cloudflare",
+        "Replit",
+        "Ralph Claude Code"
+      ]
+    },
+    "address_space_0x5_economic": {
+      "type": "Decision Layer",
+      "registers": [
+        "Money Engine",
+        "Credibility"
+      ]
+    },
+    "address_space_0x6_immutable": {
+      "type": "ROM / Write-Once",
+      "description": "Audit and Compliance",
+      "modules": [
+        "AUDIT_LOGS (Secure Log)"
+      ]
+    }
+  },
+  "component_registry": {
+    "agents": {
+      "description": "Components that do work",
+      "members": [
+        {"name": "ALGO Engine", "provides": ["predictions", "views_computed", "mape_metrics", "temporal_validation"]},
+        {"name": "SCHIG", "provides": ["fresh_data", "api_data", "daily_collection"]},
+        {"name": "Abstract Data", "provides": ["x_features", "abstract_signals", "56_signals"]},
+        {"name": "Daily Top 10s", "provides": ["rankings", "top10_reports", "views_rankings"]},
+        {"name": "Studios", "provides": ["studio_classification", "production_company_mapping"]},
+        {"name": "Talent", "provides": ["talent_metrics", "cast_analysis"]},
+        {"name": "Money Engine", "provides": ["roi", "valuation", "ad_economics"]},
+        {"name": "Fresh In!", "provides": ["routing", "integration", "data_freshness"]},
+        {"name": "Credibility", "provides": ["credibility_scores"]},
+        {"name": "Cloudflare", "provides": ["api_deployment", "r2_storage"]},
+        {"name": "Replit", "provides": ["web_deployment", "ui"]}
+      ]
+    },
+    "ledgers": {
+      "description": "Components that record truth",
+      "members": [
+        {"name": "MAPIE", "provides": ["mape_tracking", "validation", "accuracy_reports"]},
+        {"name": "Views Training Data", "provides": ["training_data", "ground_truth", "y_labels"]},
+        {"name": "Components", "provides": ["lookup_tables", "config_data", "weights"]},
+        {"name": "Schema", "provides": ["schema", "validation_rules", "column_definitions"]}
+      ]
+    },
+    "constraints": {
+      "description": "Components that can stop execution",
+      "members": [
+        {"name": "Orchestrator", "provides": ["health_checks", "coordination", "pipeline_control"]},
+        {"name": "GPU Enablement", "provides": ["gpu_enforcement", "circuit_breaker", "anti_cheat"]}
+      ]
+    }
+  },
+  "path_registry": {
+    "base_path": "C:/Users/RoyT6/Downloads",
+    "bfd": "BFD_V22.03.parquet",
+    "bfd_latest": "BFD_V22.04.parquet",
+    "star": "BFD_Star_Schema_V22.03.parquet",
+    "schema": "Schema/SCHEMA_V22.00.json",
+    "schema_patch": "Schema/SCHEMA_V22.01_PATCH.json",
+    "training_data": "Views Training Data/",
+    "abstract_data": "Abstract Data/",
+    "audit_logs": "D:/ViewerDBX_Archive/AUDIT_LOGS/",
+    "archive": "D:/ViewerDBX_Archive/",
+    "components": "Components/",
+    "gpu_config": "GPU Enablement/gpu_config.json",
+    "vbus_core": "vbus_core.py",
+    "vbus_engines": "vbus_engines.py",
+    "vbus_pipeline": "vbus_pipeline.py",
+    "vbus_monitor": "vbus_monitor.py"
+  },
+  "temporal_validation": {
+    "rules": {
+      "rule_temporal": "views_{period}_{year}_* = NULL if year < start_year",
+      "rule_null_vs_zero": "0.0 = measured zero, NULL = no measurement",
+      "rule_10": "Titles with start_year > current_year must have views=0"
+    },
+    "enforcement": "MANDATORY before any ML execution"
+  },
+  "operational_rules": {
+    "1": "ALGO 95.4 executes phases; nothing executes autonomously.",
+    "2": "All data access must traverse the VBUS - NO FALLBACKS.",
+    "3": "Folders behave as hardware devices (HBM, PCIe, ROM).",
+    "4": "Audit Logs are write-once; tampering breaks the chain.",
+    "5": "Cache hierarchy auto-promotes hot data to L1.",
+    "6": "After initial build, only incremental runs (new arrivals)."
+  },
+  "four_rules_enforcement": {
+    "V1_proof_of_work": {
+      "requirement": "GPU memory delta, rows_checked counter",
+      "purpose": "Prove actual computation occurred"
+    },
+    "V2_checksum": {
+      "requirement": "SHA-256 + MD5, output != input",
+      "purpose": "Validate data integrity"
+    },
+    "V3_execution_logging": {
+      "requirement": "Cryptographic chain with prev_hash",
+      "purpose": "Tamper-proof audit trail"
+    },
+    "V4_trust_based_audit": {
+      "requirement": "machine_generated=True, operator_editable=False",
+      "purpose": "Distinguish computed vs human data"
+    }
+  },
+  "implementation_files": {
+    "core": "vbus_core.py",
+    "engines": "vbus_engines.py",
+    "pipeline": "vbus_pipeline.py",
+    "monitor": "vbus_monitor.py"
+  }
+}

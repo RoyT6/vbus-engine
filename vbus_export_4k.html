@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>VBUS Architecture - 4K Export (Transparent)</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            background: #333;
+            font-family: Arial, sans-serif;
+            color: white;
+        }
+        .controls {
+            margin-bottom: 20px;
+            padding: 15px;
+            background: #2a2a4e;
+            border-radius: 10px;
+        }
+        button {
+            background: #4444ff;
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            font-size: 18px;
+            border-radius: 8px;
+            cursor: pointer;
+            margin-right: 10px;
+            margin-bottom: 10px;
+        }
+        button:hover {
+            background: #5555ff;
+        }
+        button.green {
+            background: #44aa44;
+        }
+        button.green:hover {
+            background: #55bb55;
+        }
+        #svgContainer {
+            width: 100%;
+            overflow: auto;
+            background: repeating-conic-gradient(#808080 0% 25%, #666 0% 50%) 50% / 20px 20px;
+            border-radius: 10px;
+            padding: 10px;
+        }
+        canvas {
+            display: none;
+        }
+        .info {
+            color: #aaa;
+            font-size: 14px;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="controls">
+        <h2>VBUS Architecture - FRAMECORE</h2>
+        <p>Resolution: 3840 x 2160 (4K UHD)</p>
+        <button class="green" onclick="downloadPNGTransparent()">Download PNG (Transparent Background)</button>
+        <button onclick="downloadPNGDark()">Download PNG (Dark Background)</button>
+        <button onclick="downloadSVG()">Download SVG</button>
+        <div class="info">Checkered pattern shows transparent areas</div>
+    </div>
+
+    <div id="svgContainer">
+        <svg id="mainSvg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 3840 2160" width="100%" height="auto">
+          <!-- Background rect - will be hidden for transparent export -->
+          <rect id="bgRect" width="3840" height="2160" fill="#121218"/>
+
+          <!-- ===== FRAMECORE LOGO - TOP LEFT WHITE ===== -->
+          <text x="80" y="100" font-family="Arial Black, sans-serif" font-size="72" font-weight="900" fill="#ffffff" letter-spacing="4">FRAMECORE</text>
+
+          <!-- ===== TOP ROW: Data Sources ===== -->
+
+          <!-- Data Stores Box -->
+          <rect x="600" y="120" width="400" height="200" rx="20" fill="none" stroke="#ffffff" stroke-width="3"/>
+          <text x="800" y="175" font-family="Arial, sans-serif" font-size="38" fill="#ffffff" text-anchor="middle">Data Stores</text>
+          <!-- Cloud + Database icons -->
+          <path d="M 720 250 Q 720 220 750 220 Q 760 200 790 210 Q 820 200 830 220 Q 860 220 860 250 Q 860 280 830 280 L 750 280 Q 720 280 720 250" fill="none" stroke="#00bcd4" stroke-width="3"/>
+          <rect x="830" y="230" width="40" height="50" fill="none" stroke="#ffc107" stroke-width="2" rx="3"/>
+          <ellipse cx="850" cy="235" rx="20" ry="6" fill="none" stroke="#ffc107" stroke-width="2"/>
+          <ellipse cx="850" cy="275" rx="20" ry="6" fill="none" stroke="#ffc107" stroke-width="2"/>
+
+          <!-- Data Streams Box -->
+          <rect x="1120" y="120" width="400" height="200" rx="20" fill="none" stroke="#ffffff" stroke-width="3"/>
+          <text x="1320" y="175" font-family="Arial, sans-serif" font-size="38" fill="#ffffff" text-anchor="middle">Data Streams</text>
+          <!-- WiFi/Broadcast icon -->
+          <circle cx="1320" cy="270" r="12" fill="#ffffff"/>
+          <path d="M 1260 220 Q 1320 170 1380 220" fill="none" stroke="#ffffff" stroke-width="4"/>
+          <path d="M 1280 240 Q 1320 200 1360 240" fill="none" stroke="#ffffff" stroke-width="4"/>
+
+          <!-- Applications Box -->
+          <rect x="1640" y="120" width="400" height="200" rx="20" fill="none" stroke="#ffffff" stroke-width="3"/>
+          <text x="1840" y="175" font-family="Arial, sans-serif" font-size="38" fill="#ffffff" text-anchor="middle">Applications</text>
+          <!-- Grid of dots icon -->
+          <rect x="1770" y="210" width="140" height="100" rx="10" fill="none" stroke="#ffffff" stroke-width="2"/>
+          <circle cx="1800" cy="245" r="12" fill="#ffffff"/>
+          <circle cx="1840" cy="245" r="12" fill="#ffffff"/>
+          <circle cx="1880" cy="245" r="12" fill="#ffffff"/>
+          <circle cx="1800" cy="280" r="12" fill="#ffffff"/>
+          <circle cx="1840" cy="280" r="12" fill="#ffffff"/>
+          <circle cx="1880" cy="280" r="12" fill="#ffffff"/>
+
+          <!-- Connection dots from sources -->
+          <circle cx="800" cy="320" r="15" fill="#00bcd4"/>
+          <circle cx="1320" cy="320" r="15" fill="#00bcd4"/>
+          <circle cx="1840" cy="320" r="15" fill="#00bcd4"/>
+
+          <!-- Curved lines connecting to center -->
+          <path d="M 800 335 Q 800 420 1100 480" fill="none" stroke="#00bcd4" stroke-width="5"/>
+          <path d="M 1320 335 L 1320 480" fill="none" stroke="#00bcd4" stroke-width="5"/>
+          <path d="M 1840 335 Q 1840 420 1540 480" fill="none" stroke="#00bcd4" stroke-width="5"/>
+
+          <!-- Central junction point -->
+          <circle cx="1320" cy="480" r="18" fill="#00bcd4"/>
+
+          <!-- ===== VBUS LABEL - CRISP ===== -->
+          <text x="1320" y="560" font-family="Arial Black, sans-serif" font-size="80" font-weight="900" fill="#ff4444" text-anchor="middle">VBUS</text>
+
+          <!-- ===== INGEST LAYER: Data Load + Event Queue (Red Border) ===== -->
+          <rect x="900" y="590" width="840" height="180" rx="25" fill="rgba(255,68,68,0.15)" stroke="#ff4444" stroke-width="5"/>
+
+          <!-- Data Load -->
+          <text x="1040" y="660" font-family="Arial, sans-serif" font-size="36" fill="#ffffff" text-anchor="middle">Data</text>
+          <text x="1040" y="705" font-family="Arial, sans-serif" font-size="36" fill="#ffffff" text-anchor="middle">Load</text>
+          <!-- Gear icon -->
+          <circle cx="1170" cy="680" r="50" fill="none" stroke="#888888" stroke-width="6"/>
+          <circle cx="1170" cy="680" r="20" fill="none" stroke="#888888" stroke-width="4"/>
+          <line x1="1170" y1="620" x2="1170" y2="640" stroke="#888888" stroke-width="6"/>
+          <line x1="1170" y1="720" x2="1170" y2="740" stroke="#888888" stroke-width="6"/>
+          <line x1="1110" y1="680" x2="1130" y2="680" stroke="#888888" stroke-width="6"/>
+          <line x1="1210" y1="680" x2="1230" y2="680" stroke="#888888" stroke-width="6"/>
+
+          <!-- Event Queue -->
+          <text x="1380" y="660" font-family="Arial, sans-serif" font-size="36" fill="#ffffff" text-anchor="middle">Event</text>
+          <text x="1380" y="705" font-family="Arial, sans-serif" font-size="36" fill="#ffffff" text-anchor="middle">Queue</text>
+          <!-- Colored queue blocks -->
+          <rect x="1480" y="645" width="50" height="50" fill="#ff4444" rx="8"/>
+          <rect x="1545" y="645" width="50" height="50" fill="#4444ff" rx="8"/>
+          <rect x="1610" y="645" width="50" height="50" fill="#ffff44" rx="8"/>
+          <rect x="1675" y="645" width="50" height="50" fill="#44ff44" rx="8"/>
+
+          <!-- Connection from VBUS box downward -->
+          <circle cx="1320" cy="770" r="15" fill="#00bcd4"/>
+          <path d="M 1320 785 L 1320 850" fill="none" stroke="#00bcd4" stroke-width="5"/>
+
+          <!-- Cloud/Upload connector icon -->
+          <rect x="1260" y="850" width="120" height="80" fill="none" stroke="#888888" stroke-width="3" rx="10"/>
+          <path d="M 1290 890 Q 1290 865 1320 865 Q 1330 850 1350 865 Q 1370 860 1370 890 L 1290 890" fill="none" stroke="#888888" stroke-width="2"/>
+          <rect x="1285" y="900" width="70" height="20" fill="none" stroke="#888888" stroke-width="2"/>
+
+          <!-- ===== STORAGE LAYER (Blue Border) ===== -->
+          <rect x="700" y="980" width="1240" height="220" rx="25" fill="rgba(68,68,255,0.15)" stroke="#4444ff" stroke-width="5"/>
+
+          <!-- Connection dots at top of storage layer -->
+          <circle cx="850" cy="980" r="15" fill="#00bcd4"/>
+          <circle cx="1790" cy="980" r="15" fill="#ff4444"/>
+
+          <!-- Lines from connector to storage -->
+          <path d="M 1260 930 Q 1100 960 850 980" fill="none" stroke="#00bcd4" stroke-width="5"/>
+          <path d="M 1380 930 Q 1550 960 1790 980" fill="none" stroke="#ff4444" stroke-width="5"/>
+
+          <!-- Data Lake -->
+          <text x="850" y="1060" font-family="Arial, sans-serif" font-size="34" fill="#ffffff" text-anchor="middle">Data</text>
+          <text x="850" y="1100" font-family="Arial, sans-serif" font-size="34" fill="#ffffff" text-anchor="middle">Lake</text>
+          <!-- Lake waves icon -->
+          <rect x="780" y="1120" width="140" height="60" fill="none" stroke="#00bcd4" stroke-width="2" rx="5"/>
+          <path d="M 795 1145 Q 815 1130 835 1145 Q 855 1160 875 1145 Q 895 1130 905 1145" fill="none" stroke="#00bcd4" stroke-width="3"/>
+          <path d="M 795 1165 Q 815 1150 835 1165 Q 855 1180 875 1165" fill="none" stroke="#00bcd4" stroke-width="3"/>
+
+          <!-- Data Warehouse -->
+          <text x="1320" y="1060" font-family="Arial, sans-serif" font-size="34" fill="#ffffff" text-anchor="middle">Data</text>
+          <text x="1320" y="1100" font-family="Arial, sans-serif" font-size="34" fill="#ffffff" text-anchor="middle">Warehouse</text>
+          <!-- House/warehouse icon -->
+          <path d="M 1260 1170 L 1320 1130 L 1380 1170 L 1380 1180 L 1260 1180 Z" fill="none" stroke="#ffffff" stroke-width="3"/>
+          <rect x="1300" y="1150" width="40" height="30" fill="none" stroke="#ffffff" stroke-width="2"/>
+          <ellipse cx="1320" cy="1130" rx="12" ry="8" fill="none" stroke="#ffffff" stroke-width="2"/>
+
+          <!-- Data Lakehouse -->
+          <text x="1790" y="1060" font-family="Arial, sans-serif" font-size="34" fill="#ffffff" text-anchor="middle">Data</text>
+          <text x="1790" y="1100" font-family="Arial, sans-serif" font-size="34" fill="#ffffff" text-anchor="middle">Lakehouse</text>
+          <!-- Lakehouse icon (waves + gear) -->
+          <path d="M 1730 1145 Q 1750 1130 1770 1145 Q 1790 1160 1810 1145 Q 1830 1130 1850 1145" fill="none" stroke="#ffc107" stroke-width="3"/>
+          <circle cx="1830" cy="1170" r="18" fill="none" stroke="#ffc107" stroke-width="2"/>
+          <circle cx="1830" cy="1170" r="8" fill="none" stroke="#ffc107" stroke-width="2"/>
+
+          <!-- ===== PROCESSING HUB (Globe with servers) ===== -->
+          <circle cx="1320" cy="1320" r="80" fill="none" stroke="#888888" stroke-width="4"/>
+          <ellipse cx="1320" cy="1320" rx="80" ry="35" fill="none" stroke="#888888" stroke-width="2"/>
+          <ellipse cx="1320" cy="1320" rx="35" ry="80" fill="none" stroke="#888888" stroke-width="2"/>
+          <line x1="1240" y1="1320" x2="1400" y2="1320" stroke="#888888" stroke-width="2"/>
+
+          <!-- Server stacks inside globe -->
+          <rect x="1265" y="1290" width="50" height="15" fill="none" stroke="#aaaaaa" stroke-width="2" rx="3"/>
+          <rect x="1265" y="1310" width="50" height="15" fill="none" stroke="#aaaaaa" stroke-width="2" rx="3"/>
+          <rect x="1265" y="1330" width="50" height="15" fill="none" stroke="#aaaaaa" stroke-width="2" rx="3"/>
+
+          <rect x="1325" y="1290" width="50" height="15" fill="none" stroke="#aaaaaa" stroke-width="2" rx="3"/>
+          <rect x="1325" y="1310" width="50" height="15" fill="none" stroke="#aaaaaa" stroke-width="2" rx="3"/>
+          <rect x="1325" y="1330" width="50" height="15" fill="none" stroke="#aaaaaa" stroke-width="2" rx="3"/>
+
+          <!-- Center dot of globe -->
+          <circle cx="1320" cy="1240" r="12" fill="#00bcd4"/>
+
+          <!-- Connection from storage to globe -->
+          <path d="M 1320 1200 L 1320 1228" fill="none" stroke="#00bcd4" stroke-width="5"/>
+
+          <!-- Red line bypass around globe -->
+          <path d="M 1790 1200 Q 1790 1320 1580 1420" fill="none" stroke="#ff4444" stroke-width="5"/>
+          <circle cx="1790" cy="1200" r="15" fill="#ff4444"/>
+
+          <!-- ===== PROCESSING LAYER (Green Border) ===== -->
+          <rect x="820" y="1450" width="1000" height="180" rx="25" fill="rgba(68,255,68,0.15)" stroke="#44ff44" stroke-width="5"/>
+
+          <!-- Connection from globe to processing -->
+          <circle cx="1320" cy="1400" r="15" fill="#00bcd4"/>
+          <path d="M 1320 1415 L 1320 1450" fill="none" stroke="#00bcd4" stroke-width="5"/>
+
+          <!-- Red connection to processing layer -->
+          <circle cx="1580" cy="1450" r="15" fill="#ff4444"/>
+
+          <!-- Batch Processing -->
+          <text x="1020" y="1520" font-family="Arial, sans-serif" font-size="34" fill="#ffffff" text-anchor="middle">Batch</text>
+          <text x="1020" y="1560" font-family="Arial, sans-serif" font-size="34" fill="#ffffff" text-anchor="middle">Processing</text>
+          <!-- Stacked documents icon -->
+          <rect x="1130" y="1490" width="60" height="70" fill="none" stroke="#00bcd4" stroke-width="2" rx="5"/>
+          <rect x="1145" y="1475" width="60" height="70" fill="none" stroke="#00bcd4" stroke-width="2" rx="5"/>
+          <circle cx="1180" cy="1580" r="20" fill="none" stroke="#00bcd4" stroke-width="2"/>
+          <circle cx="1145" cy="1580" r="20" fill="none" stroke="#00bcd4" stroke-width="2"/>
+
+          <!-- Stream Processing -->
+          <text x="1480" y="1520" font-family="Arial, sans-serif" font-size="34" fill="#ffffff" text-anchor="middle">Stream</text>
+          <text x="1480" y="1560" font-family="Arial, sans-serif" font-size="34" fill="#ffffff" text-anchor="middle">Processing</text>
+          <!-- Stream bars icon -->
+          <line x1="1600" y1="1490" x2="1600" y2="1580" stroke="#ffffff" stroke-width="4"/>
+          <line x1="1630" y1="1490" x2="1630" y2="1580" stroke="#ffffff" stroke-width="4"/>
+          <line x1="1660" y1="1490" x2="1660" y2="1580" stroke="#ffffff" stroke-width="4"/>
+          <line x1="1690" y1="1490" x2="1690" y2="1580" stroke="#ffffff" stroke-width="4"/>
+          <path d="M 1590 1590 L 1700 1590" fill="none" stroke="#ffffff" stroke-width="3"/>
+
+          <!-- ===== OUTPUT CONNECTIONS ===== -->
+          <circle cx="1320" cy="1630" r="18" fill="#00bcd4"/>
+
+          <!-- Branching lines to analytics -->
+          <path d="M 1320 1648 Q 1320 1700 700 1760" fill="none" stroke="#00bcd4" stroke-width="5"/>
+          <path d="M 1320 1648 Q 1320 1700 1020 1760" fill="none" stroke="#00bcd4" stroke-width="5"/>
+          <path d="M 1320 1648 Q 1320 1700 1380 1760" fill="none" stroke="#00bcd4" stroke-width="5"/>
+          <path d="M 1320 1648 Q 1320 1700 1740 1760" fill="none" stroke="#00bcd4" stroke-width="5"/>
+
+          <!-- Connection dots above analytics boxes -->
+          <circle cx="700" cy="1760" r="15" fill="#00bcd4"/>
+          <circle cx="1020" cy="1760" r="15" fill="#00bcd4"/>
+          <circle cx="1380" cy="1760" r="15" fill="#00bcd4"/>
+          <circle cx="1740" cy="1760" r="15" fill="#00bcd4"/>
+
+          <!-- ===== ANALYTICS LAYER (Yellow Border) ===== -->
+          <rect x="500" y="1800" width="1640" height="240" rx="25" fill="rgba(255,193,7,0.15)" stroke="#ffc107" stroke-width="5"/>
+
+          <!-- Data Science -->
+          <text x="700" y="1870" font-family="Arial, sans-serif" font-size="32" fill="#ffffff" text-anchor="middle">Data</text>
+          <text x="700" y="1910" font-family="Arial, sans-serif" font-size="32" fill="#ffffff" text-anchor="middle">Science</text>
+          <!-- Atom icon -->
+          <circle cx="700" cy="1980" r="10" fill="#ff4444"/>
+          <ellipse cx="700" cy="1980" rx="45" ry="18" fill="none" stroke="#ff4444" stroke-width="2" transform="rotate(60 700 1980)"/>
+          <ellipse cx="700" cy="1980" rx="45" ry="18" fill="none" stroke="#ff4444" stroke-width="2" transform="rotate(-60 700 1980)"/>
+          <ellipse cx="700" cy="1980" rx="45" ry="18" fill="none" stroke="#ff4444" stroke-width="2"/>
+
+          <!-- Business Intelligence -->
+          <text x="1020" y="1870" font-family="Arial, sans-serif" font-size="32" fill="#ffffff" text-anchor="middle">Business</text>
+          <text x="1020" y="1910" font-family="Arial, sans-serif" font-size="32" fill="#ffffff" text-anchor="middle">Intelligence</text>
+          <!-- Lightbulb + gear icon -->
+          <path d="M 1000 1950 Q 980 1970 1000 1990 Q 1040 1990 1040 1970 Q 1060 1950 1020 1940 Q 980 1930 1000 1950" fill="none" stroke="#ffc107" stroke-width="2"/>
+          <circle cx="1060" cy="1990" r="20" fill="none" stroke="#ffc107" stroke-width="2"/>
+          <circle cx="1060" cy="1990" r="8" fill="none" stroke="#ffc107" stroke-width="2"/>
+
+          <!-- Self-Service Analytics 1 -->
+          <text x="1380" y="1870" font-family="Arial, sans-serif" font-size="32" fill="#ffffff" text-anchor="middle">Self-Service</text>
+          <text x="1380" y="1910" font-family="Arial, sans-serif" font-size="32" fill="#ffffff" text-anchor="middle">Analytics</text>
+          <!-- Dashboard icon -->
+          <rect x="1320" y="1940" width="120" height="80" fill="none" stroke="#ffc107" stroke-width="2" rx="8"/>
+          <line x1="1320" y1="1965" x2="1440" y2="1965" stroke="#ffc107" stroke-width="2"/>
+          <line x1="1380" y1="1965" x2="1380" y2="2020" stroke="#ffc107" stroke-width="2"/>
+          <rect x="1335" y="1978" width="35" height="30" fill="none" stroke="#ffc107" stroke-width="2"/>
+          <rect x="1395" y="1978" width="35" height="30" fill="none" stroke="#ffc107" stroke-width="2"/>
+
+          <!-- Self-Service Analytics 2 -->
+          <text x="1740" y="1870" font-family="Arial, sans-serif" font-size="32" fill="#ffffff" text-anchor="middle">Self-Service</text>
+          <text x="1740" y="1910" font-family="Arial, sans-serif" font-size="32" fill="#ffffff" text-anchor="middle">Analytics</text>
+          <!-- Bar chart icon -->
+          <rect x="1680" y="1980" width="25" height="40" fill="#ff4444"/>
+          <rect x="1715" y="1950" width="25" height="70" fill="#ffc107"/>
+          <rect x="1750" y="1965" width="25" height="55" fill="#44ff44"/>
+          <rect x="1785" y="1940" width="25" height="80" fill="#00bcd4"/>
+
+          <!-- ===== RIGHT SIDE FLOW ARROWS ===== -->
+
+          <!-- Collect Arrow -->
+          <polygon points="2300,180 2380,180 2380,320 2440,320 2340,420 2240,320 2300,320" fill="#4444ff"/>
+          <text x="2340" y="310" font-family="Arial Black, sans-serif" font-size="44" fill="#ffffff" text-anchor="middle" writing-mode="tb">Collect</text>
+
+          <!-- Ingest Arrow -->
+          <polygon points="2300,500 2380,500 2380,720 2440,720 2340,820 2240,720 2300,720" fill="#ff4444"/>
+          <text x="2340" y="680" font-family="Arial Black, sans-serif" font-size="44" fill="#ffffff" text-anchor="middle" writing-mode="tb">Ingest</text>
+
+          <!-- Store Arrow -->
+          <polygon points="2300,900 2380,900 2380,1200 2440,1200 2340,1300 2240,1200 2300,1200" fill="#4444ff"/>
+          <text x="2340" y="1120" font-family="Arial Black, sans-serif" font-size="44" fill="#ffffff" text-anchor="middle" writing-mode="tb">Store</text>
+
+        </svg>
+    </div>
+
+    <canvas id="canvas" width="3840" height="2160"></canvas>
+
+    <script>
+        function downloadPNGTransparent() {
+            const svg = document.getElementById('mainSvg');
+            const bgRect = document.getElementById('bgRect');
+
+            // Hide background for transparent export
+            bgRect.style.display = 'none';
+
+            const canvas = document.getElementById('canvas');
+            const ctx = canvas.getContext('2d');
+
+            canvas.width = 3840;
+            canvas.height = 2160;
+
+            // Clear canvas for transparency
+            ctx.clearRect(0, 0, 3840, 2160);
+
+            const svgData = new XMLSerializer().serializeToString(svg);
+            const svgBlob = new Blob([svgData], {type: 'image/svg+xml;charset=utf-8'});
+            const url = URL.createObjectURL(svgBlob);
+
+            const img = new Image();
+            img.onload = function() {
+                ctx.drawImage(img, 0, 0, 3840, 2160);
+                URL.revokeObjectURL(url);
+
+                const link = document.createElement('a');
+                link.download = 'vbus_architecture_4k_transparent.png';
+                link.href = canvas.toDataURL('image/png');
+                link.click();
+
+                // Restore background
+                bgRect.style.display = 'block';
+            };
+            img.src = url;
+        }
+
+        function downloadPNGDark() {
+            const svg = document.getElementById('mainSvg');
+            const canvas = document.getElementById('canvas');
+            const ctx = canvas.getContext('2d');
+
+            canvas.width = 3840;
+            canvas.height = 2160;
+
+            const svgData = new XMLSerializer().serializeToString(svg);
+            const svgBlob = new Blob([svgData], {type: 'image/svg+xml;charset=utf-8'});
+            const url = URL.createObjectURL(svgBlob);
+
+            const img = new Image();
+            img.onload = function() {
+                ctx.drawImage(img, 0, 0, 3840, 2160);
+                URL.revokeObjectURL(url);
+
+                const link = document.createElement('a');
+                link.download = 'vbus_architecture_4k_dark.png';
+                link.href = canvas.toDataURL('image/png');
+                link.click();
+            };
+            img.src = url;
+        }
+
+        function downloadSVG() {
+            const svg = document.getElementById('mainSvg');
+            const svgData = new XMLSerializer().serializeToString(svg);
+            const blob = new Blob([svgData], {type: 'image/svg+xml'});
+            const url = URL.createObjectURL(blob);
+
+            const link = document.createElement('a');
+            link.download = 'vbus_architecture_4k.svg';
+            link.href = url;
+            link.click();
+
+            URL.revokeObjectURL(url);
+        }
+    </script>
+</body>
+</html>
