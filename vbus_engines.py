@@ -676,9 +676,9 @@ class OrchestratorEngineVBUS(VBUSEngine):
             return False
 
 
-class GPUEnablementEngineVBUS(VBUSEngine):
+class GPUEngineVBUS(VBUSEngine):
     """
-    GPU Enablement - GPU Enforcement & Circuit Breaker
+    GPU Engine - GPU Enforcement & Circuit Breaker
 
     Provides: gpu_enforcement, circuit_breaker, anti_cheat
     Requires: (none)
@@ -686,7 +686,7 @@ class GPUEnablementEngineVBUS(VBUSEngine):
 
     def __init__(self):
         super().__init__(
-            name="GPU Enablement",
+            name="GPU Engine",
             role="CONSTRAINT",
             provides=["gpu_enforcement", "circuit_breaker", "anti_cheat"],
             requires=[]
@@ -696,7 +696,7 @@ class GPUEnablementEngineVBUS(VBUSEngine):
 
     def execute(self, **kwargs) -> Dict[str, Any]:
         """Check GPU status"""
-        gpu_path = self.resolve("component:gpu_enablement")
+        gpu_path = self.resolve("component:gpu_engine")
 
         results = {
             "gpu_path": str(gpu_path),
@@ -745,7 +745,7 @@ class VBUSEngineFactory:
         "Components": ComponentsEngineVBUS,
         "Schema": SchemaEngineVBUS,
         "Orchestrator": OrchestratorEngineVBUS,
-        "GPU Enablement": GPUEnablementEngineVBUS,
+        "GPU Engine": GPUEngineVBUS,
     }
 
     @classmethod

@@ -41,7 +41,17 @@ import weakref
 
 ALGO_VERSION = "95.4"
 VBUS_VERSION = "1.0.0"
-BASE_PATH = Path(r"C:\Users\RoyT6\Downloads")
+
+# Platform-aware path detection
+import platform as _platform
+def _get_base_path() -> Path:
+    """Get base path based on platform (Windows vs WSL)."""
+    if _platform.system() == 'Windows':
+        return Path(r'C:\Users\RoyT6\Downloads')
+    else:
+        return Path('/mnt/c/Users/RoyT6/Downloads')
+
+BASE_PATH = _get_base_path()
 
 # Cache configuration (like CPU cache hierarchy)
 L1_CACHE_SIZE = 64       # Hot data - most frequently accessed (in-memory)
@@ -295,7 +305,7 @@ class HierarchicalCache:
         """Estimate memory size of value"""
         try:
             return len(pickle.dumps(value))
-        except:
+        except (TypeError, pickle.PicklingError, OverflowError):
             return 0
 
     def _load_l3_from_disk(self) -> None:
@@ -304,7 +314,7 @@ class HierarchicalCache:
             try:
                 with open(self._l3_disk_path, 'rb') as f:
                     self._l3_cache = pickle.load(f)
-            except:
+            except (OSError, pickle.UnpicklingError, EOFError):
                 self._l3_cache = OrderedDict()
 
     def save_l3_to_disk(self) -> None:
@@ -546,12 +556,13 @@ class VBUS:
         self._path_registry["bfd"] = self._find_latest("BFD_V*.parquet")
         self._path_registry["star"] = self._find_latest("BFD_Star_Schema_V*.parquet")
 
-        # Component directories
+        # Component directories (updated to actual folder names)
         components = [
             "ALGO Engine", "SCHIG", "Abstract Data", "Daily Top 10s",
-            "Studios", "Talent", "Money Engine", "Fresh In!", "Credibility",
-            "Cloudflare", "Replit", "MAPIE", "Views TRaining Data",
-            "Components", "Schema", "Orchestrator", "GPU Enablement", "AUDIT_LOGS"
+            "Studios", "Talent", "Money Engine", "FreshIn Engine", "Credibility Engine",
+            "Cloudflare", "Replit", "MAPIE Engine", "Views TRaining Data",
+            "Components Engine", "Schema Engine", "Orchestrator Engine", "GPU Engine",
+            "Merge Engine", "AUDIT_LOGS"
         ]
 
         for comp in components:
@@ -560,8 +571,8 @@ class VBUS:
             if path.exists():
                 self._path_registry[key] = path
 
-        # Schema
-        self._path_registry["schema"] = self.base_path / "Schema" / "SCHEMA_V27.00.json"
+        # Schema (V27.66 current version)
+        self._path_registry["schema"] = self.base_path / "Schema Engine" / "Others" / "SCHEMA_V27.66.json"
 
         # Bus manifest
         self._path_registry["manifest"] = self.base_path / "bus_manifest.json"
@@ -844,14 +855,14 @@ class VBUS:
                 with open(state_path, 'r') as f:
                     state = json.load(f)
                 self._last_full_build = state.get("last_full_build")
-            except:
+            except (OSError, json.JSONDecodeError, KeyError):
                 pass
 
         if processed_path.exists():
             try:
                 with open(processed_path, 'rb') as f:
                     self._processed_titles = pickle.load(f)
-            except:
+            except (OSError, pickle.UnpicklingError, EOFError):
                 self._processed_titles = set()
 
     # =========================================================================

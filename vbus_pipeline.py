@@ -277,11 +277,11 @@ class VBUSPipeline:
         """Validate GPU is available"""
         # Check for GPU (simplified - actual check would use CUDA)
         try:
-            gpu_path = self.vbus.resolve("component:gpu_enablement", "pipeline")
+            gpu_path = self.vbus.resolve("component:gpu_engine", "pipeline")
             # In real implementation, would check CUDA availability
             return True, "GPU check pending (requires CUDA)"
         except VBUSEnforcementError:
-            return False, "GPU Enablement component not found"
+            return False, "GPU Engine component not found"
 
     def _validate_audit_policy(self) -> Tuple[bool, str]:
         """Validate audit policy compliance"""
